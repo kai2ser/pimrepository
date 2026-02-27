@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
 import { del } from "@vercel/blob";
 import { deleteDocument } from "@/modules/documents/queries";

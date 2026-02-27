@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
 import { listRecords, createRecord } from "@/modules/records/queries";
 import { policyRecordSchema } from "@/modules/records/schema";

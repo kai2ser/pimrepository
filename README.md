@@ -1,36 +1,159 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PIM Country Policy Profile Repository
 
-## Getting Started
+A web application for managing Public Investment Management (PIM) country policy and strategy documents. Each policy record holds rich metadata and links to up to one English PDF and one native-language PDF.
 
-First, run the development server:
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Framework | Next.js 16 (App Router, TypeScript) |
+| Database | Neon (serverless Postgres) via Drizzle ORM |
+| File Storage | Vercel Blob |
+| UI | shadcn/ui + Tailwind CSS v4 |
+| Data Grid | TanStack Table v8 |
+| Forms | React Hook Form + Zod v4 |
+| Deployment | Vercel |
+
+---
+
+## Local Setup
+
+### 1. Install dependencies
+
+```bash
+npm install
+```
+
+### 2. Configure environment
+
+Edit `.env.local` with real values:
+
+| Variable | Where to get it |
+|---|---|
+| `DATABASE_URL` | [neon.tech](https://neon.tech) → Project → Connection string |
+| `BLOB_READ_WRITE_TOKEN` | Vercel dashboard → Storage → Blob → Token |
+
+### 3. Push schema to database
+
+```bash
+npm run db:push
+```
+
+### 4. Run dev server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 5. Seed sample data (optional)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+curl -X POST http://localhost:3000/api/seed
+```
 
-## Learn More
+Inserts 10 sample country policy records. Safe to call multiple times — skips if data already exists.
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Database Commands
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm run db:push        # Push schema directly to DB (dev)
+npm run db:generate    # Generate SQL migration files
+npm run db:migrate     # Apply migrations
+npm run db:studio      # Open Drizzle Studio browser GUI
+```
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Deploying to Vercel
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Push to GitHub
+2. Import project at [vercel.com/new](https://vercel.com/new)
+3. Add environment variables in Vercel project settings:
+   - `DATABASE_URL`
+   - `BLOB_READ_WRITE_TOKEN`
+4. Deploy
+
+---
+
+## Project Structure
+
+```
+app/
+  page.tsx                     # Repository browse (server component)
+  records/
+    new/page.tsx               # Create record
+    [id]/page.tsx              # Record detail + document management
+    [id]/edit/page.tsx         # Edit record metadata
+  api/
+    records/route.ts           # GET list+filter, POST create
+    records/[id]/route.ts      # GET, PATCH, DELETE
+    documents/upload/route.ts  # POST PDF → Vercel Blob
+    documents/[id]/route.ts    # DELETE document
+    countries/route.ts         # GET distinct countries list
+    seed/route.ts              # POST seed sample data
+
+components/
+  records/
+    RecordTable.tsx            # Searchable, filterable table
+    RecordForm.tsx             # Create / edit form
+    TierBadge.tsx              # Tier classification badge
+    DeleteRecordButton.tsx     # Confirm-before-delete dialog
+  documents/
+    DocumentUpload.tsx         # Upload / replace / delete PDF slots
+    DocumentSection.tsx        # Client-side state wrapper
+
+modules/
+  records/
+    schema.ts                  # Zod schema (shared client + API)
+    queries.ts                 # Drizzle DB queries
+  documents/
+    queries.ts                 # Document DB queries
+
+drizzle/
+  schema.ts                    # Database schema definition
+  migrate.ts                   # Migration runner script
+```
+
+---
+
+## Data Model
+
+### `policy_records`
+
+| Column | Type | Notes |
+|---|---|---|
+| id | UUID PK | Auto-generated |
+| country | varchar | Country name |
+| name_eng | text | English document title |
+| name_orig | text | Native language title |
+| year | smallint | Publication year |
+| source | text | Issuing body |
+| year_revised | smallint | Last revision year |
+| overview | text | Description / abstract |
+| policy_guidance_tier | smallint | Tier 1–5 |
+| strategy_tier | smallint | Tier 1–5 |
+| comment | text | Internal notes |
+| link | text | External source URL |
+| pages | smallint | Page count |
+| tokens | integer | Token count (AI use) |
+
+### `documents`
+
+| Column | Type | Notes |
+|---|---|---|
+| id | UUID PK | Auto-generated |
+| record_id | UUID FK | → policy_records (cascade delete) |
+| lang_type | varchar | `ENG` or `ORI` |
+| lang_code | varchar | ISO 639 code e.g. `lt`, `vi` |
+| lang_label | varchar | Human label e.g. `Lithuanian` |
+| blob_url | text | Vercel Blob public URL |
+| file_name | text | Original filename |
+| file_size | integer | Size in bytes |
+
+A `UNIQUE(record_id, lang_type)` constraint enforces **max one English + one native document per record** at the database level.

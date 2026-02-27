@@ -1,0 +1,344 @@
+"use client";
+
+import { useState, useMemo } from "react";
+import Link from "next/link";
+import {
+  useReactTable,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getSortedRowModel,
+  getPaginationRowModel,
+  flexRender,
+  type ColumnDef,
+  type SortingState,
+} from "@tanstack/react-table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { TierBadge } from "./TierBadge";
+import type { PolicyRecord } from "@/drizzle/schema";
+import {
+  ArrowUpDown,
+  ChevronLeft,
+  ChevronRight,
+  ExternalLink,
+  FileText,
+  Plus,
+  Search,
+  X,
+} from "lucide-react";
+
+interface RecordTableProps {
+  records: PolicyRecord[];
+  countries: string[];
+}
+
+export function RecordTable({ records, countries }: RecordTableProps) {
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [globalFilter, setGlobalFilter] = useState("");
+  const [countryFilter, setCountryFilter] = useState("all");
+  const [tierFilter, setTierFilter] = useState("all");
+
+  const filtered = useMemo(() => {
+    return records.filter((r) => {
+      if (countryFilter && countryFilter !== "all" && r.country !== countryFilter)
+        return false;
+      if (tierFilter && tierFilter !== "all") {
+        const t = parseInt(tierFilter);
+        if (r.policyGuidanceTier !== t && r.strategyTier !== t) return false;
+      }
+      if (globalFilter) {
+        const q = globalFilter.toLowerCase();
+        return (
+          r.nameEng.toLowerCase().includes(q) ||
+          r.country.toLowerCase().includes(q) ||
+          (r.overview ?? "").toLowerCase().includes(q)
+        );
+      }
+      return true;
+    });
+  }, [records, countryFilter, tierFilter, globalFilter]);
+
+  const columns: ColumnDef<PolicyRecord>[] = useMemo(
+    () => [
+      {
+        accessorKey: "country",
+        header: ({ column }) => (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="-ml-3 h-8"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Country
+            <ArrowUpDown className="ml-2 h-3 w-3" />
+          </Button>
+        ),
+        cell: ({ row }) => (
+          <span className="font-medium text-sm">{row.original.country}</span>
+        ),
+      },
+      {
+        accessorKey: "nameEng",
+        header: "Document Name",
+        cell: ({ row }) => (
+          <div className="max-w-xs">
+            <Link
+              href={`/records/${row.original.id}`}
+              className="text-sm text-blue-700 hover:underline font-medium line-clamp-2"
+            >
+              {row.original.nameEng}
+            </Link>
+            {row.original.nameOrig && (
+              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1 italic">
+                {row.original.nameOrig}
+              </p>
+            )}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "year",
+        header: ({ column }) => (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="-ml-3 h-8"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Year
+            <ArrowUpDown className="ml-2 h-3 w-3" />
+          </Button>
+        ),
+        cell: ({ row }) => (
+          <div className="text-sm text-center">
+            <span>{row.original.year ?? "—"}</span>
+            {row.original.yearRevised && (
+              <span className="text-muted-foreground ml-1 text-xs">
+                (rev. {row.original.yearRevised})
+              </span>
+            )}
+          </div>
+        ),
+      },
+      {
+        id: "tiers",
+        header: "Tiers",
+        cell: ({ row }) => (
+          <div className="flex gap-1 flex-wrap">
+            <TierBadge tier={row.original.policyGuidanceTier} type="policy" />
+            <TierBadge tier={row.original.strategyTier} type="strategy" />
+          </div>
+        ),
+      },
+      {
+        accessorKey: "pages",
+        header: "Pages",
+        cell: ({ row }) => (
+          <span className="text-sm text-center text-muted-foreground">
+            {row.original.pages ?? "—"}
+          </span>
+        ),
+      },
+      {
+        id: "actions",
+        header: "",
+        cell: ({ row }) => (
+          <div className="flex gap-1 justify-end">
+            {row.original.link && (
+              <a
+                href={row.original.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="External link"
+              >
+                <Button variant="ghost" size="icon" className="h-7 w-7">
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </Button>
+              </a>
+            )}
+            <Link href={`/records/${row.original.id}`}>
+              <Button variant="ghost" size="icon" className="h-7 w-7" title="View record">
+                <FileText className="h-3.5 w-3.5" />
+              </Button>
+            </Link>
+          </div>
+        ),
+      },
+    ],
+    []
+  );
+
+  const table = useReactTable({
+    data: filtered,
+    columns,
+    state: { sorting },
+    onSortingChange: setSorting,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    initialState: { pagination: { pageSize: 20 } },
+  });
+
+  return (
+    <div className="space-y-4">
+      {/* Filter bar */}
+      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+        <div className="flex flex-col sm:flex-row gap-2 flex-1">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search documents, countries…"
+              value={globalFilter}
+              onChange={(e) => setGlobalFilter(e.target.value)}
+              className="pl-9 h-9"
+            />
+            {globalFilter && (
+              <button
+                onClick={() => setGlobalFilter("")}
+                className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+
+          <Select value={countryFilter} onValueChange={setCountryFilter}>
+            <SelectTrigger className="w-[180px] h-9">
+              <SelectValue placeholder="All countries" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All countries</SelectItem>
+              {countries.map((c) => (
+                <SelectItem key={c} value={c}>
+                  {c}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={tierFilter} onValueChange={setTierFilter}>
+            <SelectTrigger className="w-[150px] h-9">
+              <SelectValue placeholder="All tiers" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All tiers</SelectItem>
+              {[1, 2, 3, 4, 5].map((t) => (
+                <SelectItem key={t} value={String(t)}>
+                  Tier {t}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {(countryFilter !== "all" || tierFilter !== "all" || globalFilter) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setCountryFilter("all");
+                setTierFilter("all");
+                setGlobalFilter("");
+              }}
+              className="h-9 text-muted-foreground"
+            >
+              <X className="h-3.5 w-3.5 mr-1" />
+              Clear
+            </Button>
+          )}
+        </div>
+
+        <Link href="/records/new">
+          <Button size="sm" className="h-9">
+            <Plus className="h-4 w-4 mr-1.5" />
+            Add Record
+          </Button>
+        </Link>
+      </div>
+
+      {/* Result count */}
+      <p className="text-sm text-muted-foreground">
+        Showing {filtered.length} of {records.length} records
+      </p>
+
+      {/* Table */}
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            {table.getHeaderGroups().map((hg) => (
+              <TableRow key={hg.id} className="bg-muted/40">
+                {hg.headers.map((header) => (
+                  <TableHead key={header.id} className="text-xs font-semibold uppercase tracking-wide">
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(header.column.columnDef.header, header.getContext())}
+                  </TableHead>
+                ))}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows.length ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow key={row.id} className="hover:bg-muted/30">
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id} className="py-2.5">
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
+                  No records found.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Pagination */}
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">
+          Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+        </p>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}

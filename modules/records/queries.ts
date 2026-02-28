@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { policyRecords, documents, countries } from "@/drizzle/schema";
-import { eq, ilike, or, and, SQL, asc, sql } from "drizzle-orm";
+import { eq, ilike, or, and, SQL, asc, sql, inArray } from "drizzle-orm";
 import type { PolicyRecordInput, PolicyRecordUpdateInput } from "./schema";
 import type { PolicyRecordWithDocs } from "@/drizzle/schema";
 
@@ -116,6 +116,34 @@ export async function listAllCountries(): Promise<{ iso3: string; name: string }
     .from(countries)
     .orderBy(asc(countries.name));
   return rows;
+}
+
+// ── Records with documents for a given country ────────────────────────────
+export async function getRecordsWithDocsByCountry(iso3: string) {
+  const records = await db
+    .select()
+    .from(policyRecords)
+    .where(eq(policyRecords.country, iso3))
+    .orderBy(asc(policyRecords.nameEng));
+
+  if (records.length === 0) return [];
+
+  const ids = records.map((r) => r.id);
+  const docs = await db
+    .select()
+    .from(documents)
+    .where(inArray(documents.recordId, ids));
+
+  // Group docs by recordId
+  const docMap = new Map<string, typeof docs>();
+  for (const doc of docs) {
+    if (!docMap.has(doc.recordId)) docMap.set(doc.recordId, []);
+    docMap.get(doc.recordId)!.push(doc);
+  }
+
+  return records
+    .map((r) => ({ record: r, docs: docMap.get(r.id) ?? [] }))
+    .filter((r) => r.docs.length > 0);
 }
 
 // ── Policy record counts grouped by country ISO3 ──────────────────────────

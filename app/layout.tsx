@@ -4,7 +4,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import Link from "next/link";
 import Image from "next/image";
-import { BookOpen, ScrollText, Info, Globe } from "lucide-react";
+import { BookOpen, ScrollText, Info, Globe, Download } from "lucide-react";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -57,6 +57,13 @@ export default function RootLayout({
                 >
                   <Globe className="h-3.5 w-3.5" />
                   Countries
+                </Link>
+                <Link
+                  href="/download"
+                  className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-md hover:bg-muted transition-colors"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  Download
                 </Link>
                 <Link
                   href="/"

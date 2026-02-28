@@ -58,12 +58,6 @@ export default function RootLayout({
                   <BookOpen className="h-3.5 w-3.5" />
                   Repository
                 </Link>
-                <Link
-                  href="/records/new"
-                  className="flex items-center gap-1.5 text-sm font-medium bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700 transition-colors ml-1"
-                >
-                  + Add Record
-                </Link>
               </nav>
             </div>
           </div>

@@ -21,7 +21,7 @@ import { policyRecordSchema, type PolicyRecordInput } from "@/modules/records/sc
 import type { Document, PolicyRecord } from "@/drizzle/schema";
 import { Loader2, Save } from "lucide-react";
 import { DocAttachment } from "@/components/documents/DocAttachment";
-import { TIERS } from "@/lib/tiers";
+import { TIERS, STRATEGY_TYPES } from "@/lib/tiers";
 
 interface RecordFormProps {
   record?: PolicyRecord;
@@ -211,6 +211,8 @@ export function RecordForm({ record, documents = [], mode }: RecordFormProps) {
           Classification
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+          {/* Policy Guidance Tier */}
           <div className="space-y-1.5">
             <Label>Policy Guidance Tier</Label>
             <Select
@@ -232,8 +234,10 @@ export function RecordForm({ record, documents = [], mode }: RecordFormProps) {
               </SelectContent>
             </Select>
           </div>
+
+          {/* Strategy Classification */}
           <div className="space-y-1.5">
-            <Label>Strategy Tier</Label>
+            <Label>Strategy Classification</Label>
             <Select
               value={watch("strategyTier")?.toString() ?? "none"}
               onValueChange={(v) =>
@@ -241,18 +245,19 @@ export function RecordForm({ record, documents = [], mode }: RecordFormProps) {
               }
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select tier…" />
+                <SelectValue placeholder="Select strategy type…" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">None</SelectItem>
-                {TIERS.map((t) => (
-                  <SelectItem key={t.value} value={String(t.value)}>
-                    {t.label}
+                {STRATEGY_TYPES.map((s) => (
+                  <SelectItem key={s.value} value={String(s.value)}>
+                    {s.label}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
+
         </div>
       </section>
 

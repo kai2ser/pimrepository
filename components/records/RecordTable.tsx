@@ -31,7 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TierBadge } from "./TierBadge";
-import { TIERS } from "@/lib/tiers";
+import { TIERS, STRATEGY_TYPES } from "@/lib/tiers";
 import type { PolicyRecord } from "@/drizzle/schema";
 import {
   ArrowUpDown,
@@ -53,16 +53,14 @@ export function RecordTable({ records, countries }: RecordTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
   const [countryFilter, setCountryFilter] = useState("all");
-  const [tierFilter, setTierFilter] = useState("all");
+  const [policyTierFilter, setPolicyTierFilter] = useState("all");
+  const [strategyFilter, setStrategyFilter] = useState("all");
 
   const filtered = useMemo(() => {
     return records.filter((r) => {
-      if (countryFilter && countryFilter !== "all" && r.country !== countryFilter)
-        return false;
-      if (tierFilter && tierFilter !== "all") {
-        const t = parseInt(tierFilter);
-        if (r.policyGuidanceTier !== t && r.strategyTier !== t) return false;
-      }
+      if (countryFilter !== "all" && r.country !== countryFilter) return false;
+      if (policyTierFilter !== "all" && r.policyGuidanceTier !== parseInt(policyTierFilter)) return false;
+      if (strategyFilter !== "all" && r.strategyTier !== parseInt(strategyFilter)) return false;
       if (globalFilter) {
         const q = globalFilter.toLowerCase();
         return (
@@ -73,7 +71,7 @@ export function RecordTable({ records, countries }: RecordTableProps) {
       }
       return true;
     });
-  }, [records, countryFilter, tierFilter, globalFilter]);
+  }, [records, countryFilter, policyTierFilter, strategyFilter, globalFilter]);
 
   const columns: ColumnDef<PolicyRecord>[] = useMemo(
     () => [
@@ -234,12 +232,12 @@ export function RecordTable({ records, countries }: RecordTableProps) {
             </SelectContent>
           </Select>
 
-          <Select value={tierFilter} onValueChange={setTierFilter}>
+          <Select value={policyTierFilter} onValueChange={setPolicyTierFilter}>
             <SelectTrigger className="w-[200px] h-9">
-              <SelectValue placeholder="All tiers" />
+              <SelectValue placeholder="Policy Guidance Tier" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All tiers</SelectItem>
+              <SelectItem value="all">All Policy Tiers</SelectItem>
               {TIERS.map((t) => (
                 <SelectItem key={t.value} value={String(t.value)}>
                   {t.label}
@@ -248,13 +246,28 @@ export function RecordTable({ records, countries }: RecordTableProps) {
             </SelectContent>
           </Select>
 
-          {(countryFilter !== "all" || tierFilter !== "all" || globalFilter) && (
+          <Select value={strategyFilter} onValueChange={setStrategyFilter}>
+            <SelectTrigger className="w-[200px] h-9">
+              <SelectValue placeholder="Strategy Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Strategy Types</SelectItem>
+              {STRATEGY_TYPES.map((s) => (
+                <SelectItem key={s.value} value={String(s.value)}>
+                  {s.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {(countryFilter !== "all" || policyTierFilter !== "all" || strategyFilter !== "all" || globalFilter) && (
             <Button
               variant="ghost"
               size="sm"
               onClick={() => {
                 setCountryFilter("all");
-                setTierFilter("all");
+                setPolicyTierFilter("all");
+                setStrategyFilter("all");
                 setGlobalFilter("");
               }}
               className="h-9 text-muted-foreground"

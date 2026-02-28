@@ -11,9 +11,16 @@ const optionalYear = z.preprocess(
   z.number().int().min(1900).max(2100).nullable().optional()
 );
 
-const optionalTier = z.preprocess(
+// Policy Guidance Tier: 1–4
+const optionalPolicyTier = z.preprocess(
   (v) => (v === "" || v == null ? null : Number(v)),
   z.number().int().min(1).max(4).nullable().optional()
+);
+
+// Strategy Classification: 1–6
+const optionalStrategyType = z.preprocess(
+  (v) => (v === "" || v == null ? null : Number(v)),
+  z.number().int().min(1).max(6).nullable().optional()
 );
 
 export const policyRecordSchema = z.object({
@@ -24,8 +31,8 @@ export const policyRecordSchema = z.object({
   source: z.string().nullable().optional(),
   yearRevised: optionalYear,
   overview: z.string().nullable().optional(),
-  policyGuidanceTier: optionalTier,
-  strategyTier: optionalTier,
+  policyGuidanceTier: optionalPolicyTier,
+  strategyTier: optionalStrategyType,
   comment: z.string().nullable().optional(),
   link: z
     .string()

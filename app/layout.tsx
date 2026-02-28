@@ -3,7 +3,6 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import Link from "next/link";
-import Image from "next/image";
 import { BookOpen, ScrollText, Info } from "lucide-react";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -25,15 +24,9 @@ export default function RootLayout({
         <header className="sticky top-0 z-50 border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex h-14 items-center justify-between">
-              <Link href="/" className="flex items-center">
-                <Image
-                  src="/pim-pam-logo.svg"
-                  alt="PIM PAM — pim-pam.net"
-                  width={130}
-                  height={50}
-                  priority
-                  className="h-10 w-auto"
-                />
+              <Link href="/" className="flex items-center gap-1 leading-none">
+                <span className="font-black text-sm tracking-tight">PIM</span>
+                <span className="font-black text-sm tracking-tight">PAM</span>
               </Link>
 
               <nav className="flex items-center gap-1">

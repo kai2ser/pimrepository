@@ -5,8 +5,10 @@ import {
   text,
   smallint,
   integer,
+  numeric,
   timestamp,
   unique,
+  char,
 } from "drizzle-orm/pg-core";
 
 // ─── Policy Records ────────────────────────────────────────────────────────
@@ -50,11 +52,24 @@ export const documents = pgTable(
   (t) => [unique("unique_record_lang").on(t.recordId, t.langType)]
 );
 
+// ─── Countries Lookup ──────────────────────────────────────────────────────
+// ISO Alpha-3 keyed lookup table for all sovereign states & territories.
+// gdpBn / pubInvPctGdp / pubInvBn are 2024 estimates (IMF WEO Oct 2024).
+export const countries = pgTable("countries", {
+  iso3:          char("iso3", { length: 3 }).primaryKey(),
+  name:          text("name").notNull(),
+  gdpBn:         numeric("gdp_2024_bn",     { precision: 12, scale: 3 }),
+  pubInvPctGdp:  numeric("pub_inv_pct_gdp", { precision: 6,  scale: 4 }),
+  pubInvBn:      numeric("pub_inv_2024_bn", { precision: 12, scale: 3 }),
+});
+
 // ─── TypeScript Types ──────────────────────────────────────────────────────
 export type PolicyRecord = typeof policyRecords.$inferSelect;
 export type NewPolicyRecord = typeof policyRecords.$inferInsert;
 export type Document = typeof documents.$inferSelect;
 export type NewDocument = typeof documents.$inferInsert;
+export type Country = typeof countries.$inferSelect;
+export type NewCountry = typeof countries.$inferInsert;
 
 // Full record with documents joined
 export type PolicyRecordWithDocs = PolicyRecord & {

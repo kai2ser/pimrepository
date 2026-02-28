@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getRecordWithDocs } from "@/modules/records/queries";
+import { resolveCountryName } from "@/lib/countries-data";
 import { TierBadge } from "@/components/records/TierBadge";
 import { DocumentUpload } from "@/components/documents/DocumentUpload";
 import { Button } from "@/components/ui/button";
@@ -56,7 +57,8 @@ export default async function RecordDetailPage({
         <div className="flex items-center gap-2 flex-wrap">
           <Badge variant="secondary" className="gap-1">
             <MapPin className="h-3 w-3" />
-            {record.country}
+            {resolveCountryName(record.country)}
+            <span className="text-[10px] font-mono opacity-60 ml-0.5">({record.country})</span>
           </Badge>
           <TierBadge tier={record.policyGuidanceTier} type="policy" />
           <TierBadge tier={record.strategyTier} type="strategy" />

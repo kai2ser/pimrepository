@@ -44,9 +44,11 @@ import {
   X,
 } from "lucide-react";
 
+interface CountryOption { iso3: string; name: string; }
+
 interface RecordTableProps {
   records: PolicyRecord[];
-  countries: string[];
+  countries: CountryOption[];
 }
 
 export function RecordTable({ records, countries }: RecordTableProps) {
@@ -56,6 +58,13 @@ export function RecordTable({ records, countries }: RecordTableProps) {
   const [policyTierFilter, setPolicyTierFilter] = useState("all");
   const [strategyFilter, setStrategyFilter] = useState("all");
 
+  // Build iso3 → display name lookup
+  const countryNameMap = useMemo(
+    () => new Map(countries.map((c) => [c.iso3, c.name])),
+    [countries]
+  );
+  const resolveName = (iso3: string) => countryNameMap.get(iso3) ?? iso3;
+
   const filtered = useMemo(() => {
     return records.filter((r) => {
       if (countryFilter !== "all" && r.country !== countryFilter) return false;
@@ -63,15 +72,18 @@ export function RecordTable({ records, countries }: RecordTableProps) {
       if (strategyFilter !== "all" && r.strategyTier !== parseInt(strategyFilter)) return false;
       if (globalFilter) {
         const q = globalFilter.toLowerCase();
+        const cname = resolveName(r.country).toLowerCase();
         return (
           r.nameEng.toLowerCase().includes(q) ||
+          cname.includes(q) ||
           r.country.toLowerCase().includes(q) ||
           (r.overview ?? "").toLowerCase().includes(q)
         );
       }
       return true;
     });
-  }, [records, countryFilter, policyTierFilter, strategyFilter, globalFilter]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [records, countryFilter, policyTierFilter, strategyFilter, globalFilter, countryNameMap]);
 
   const columns: ColumnDef<PolicyRecord>[] = useMemo(
     () => [
@@ -89,7 +101,10 @@ export function RecordTable({ records, countries }: RecordTableProps) {
           </Button>
         ),
         cell: ({ row }) => (
-          <span className="font-medium text-sm">{row.original.country}</span>
+          <div className="space-y-0.5">
+            <span className="font-medium text-sm">{resolveName(row.original.country)}</span>
+            <span className="block text-[10px] font-mono text-muted-foreground">{row.original.country}</span>
+          </div>
         ),
       },
       {
@@ -225,8 +240,8 @@ export function RecordTable({ records, countries }: RecordTableProps) {
             <SelectContent>
               <SelectItem value="all">All countries</SelectItem>
               {countries.map((c) => (
-                <SelectItem key={c} value={c}>
-                  {c}
+                <SelectItem key={c.iso3} value={c.iso3}>
+                  {c.name}
                 </SelectItem>
               ))}
             </SelectContent>

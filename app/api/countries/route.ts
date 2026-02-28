@@ -1,12 +1,13 @@
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
-import { listCountries } from "@/modules/records/queries";
+import { listAllCountries } from "@/modules/records/queries";
 
-// GET /api/countries
+// GET /api/countries — returns all 195 countries from the lookup table
+// Response: { iso3: string; name: string }[]
 export async function GET() {
   try {
-    const countries = await listCountries();
+    const countries = await listAllCountries();
     return NextResponse.json(countries);
   } catch (err) {
     console.error("[GET /api/countries]", err);

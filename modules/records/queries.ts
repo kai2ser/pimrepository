@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
-import { policyRecords, documents } from "@/drizzle/schema";
-import { eq, ilike, or, and, isNotNull, SQL, asc } from "drizzle-orm";
+import { policyRecords, documents, countries } from "@/drizzle/schema";
+import { eq, ilike, or, and, SQL, asc, sql } from "drizzle-orm";
 import type { PolicyRecordInput, PolicyRecordUpdateInput } from "./schema";
 import type { PolicyRecordWithDocs } from "@/drizzle/schema";
 
@@ -96,11 +96,24 @@ export async function deleteRecord(id: string) {
   await db.delete(policyRecords).where(eq(policyRecords.id, id));
 }
 
-// ── Distinct countries ────────────────────────────────────────────────────
-export async function listCountries(): Promise<string[]> {
+// ── Countries in use (distinct from records, joined with lookup names) ───
+export async function listCountries(): Promise<{ iso3: string; name: string }[]> {
   const rows = await db
-    .selectDistinct({ country: policyRecords.country })
+    .selectDistinct({
+      iso3: policyRecords.country,
+      name: sql<string>`COALESCE(${countries.name}, ${policyRecords.country})`,
+    })
     .from(policyRecords)
-    .orderBy(asc(policyRecords.country));
-  return rows.map((r) => r.country);
+    .leftJoin(countries, eq(countries.iso3, policyRecords.country))
+    .orderBy(sql`COALESCE(${countries.name}, ${policyRecords.country})`);
+  return rows;
+}
+
+// ── All countries from the lookup table (for form combobox) ───────────────
+export async function listAllCountries(): Promise<{ iso3: string; name: string }[]> {
+  const rows = await db
+    .select({ iso3: countries.iso3, name: countries.name })
+    .from(countries)
+    .orderBy(asc(countries.name));
+  return rows;
 }

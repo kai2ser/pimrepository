@@ -21,6 +21,7 @@ import { policyRecordSchema, type PolicyRecordInput } from "@/modules/records/sc
 import type { Document, PolicyRecord } from "@/drizzle/schema";
 import { Loader2, Save } from "lucide-react";
 import { DocAttachment } from "@/components/documents/DocAttachment";
+import { CountryCombobox } from "@/components/records/CountryCombobox";
 import { TIERS, STRATEGY_TYPES } from "@/lib/tiers";
 
 interface RecordFormProps {
@@ -110,8 +111,11 @@ export function RecordForm({ record, documents = [], mode }: RecordFormProps) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
           <div className="space-y-1.5">
-            <Label htmlFor="country">Country *</Label>
-            <Input id="country" {...register("country")} placeholder="e.g. Kenya" />
+            <Label>Country *</Label>
+            <CountryCombobox
+              value={watch("country") || null}
+              onChange={(iso3) => setValue("country", iso3 ?? "")}
+            />
             <FieldError message={errors.country?.message} />
           </div>
 

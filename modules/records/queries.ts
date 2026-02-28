@@ -117,3 +117,15 @@ export async function listAllCountries(): Promise<{ iso3: string; name: string }
     .orderBy(asc(countries.name));
   return rows;
 }
+
+// ── Policy record counts grouped by country ISO3 ──────────────────────────
+export async function listPolicyCounts(): Promise<{ iso3: string; count: number }[]> {
+  const rows = await db
+    .select({
+      iso3: policyRecords.country,
+      count: sql<number>`COUNT(*)::int`,
+    })
+    .from(policyRecords)
+    .groupBy(policyRecords.country);
+  return rows;
+}

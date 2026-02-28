@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { upload } from "@vercel/blob/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -104,15 +105,33 @@ function DocSlot({
 
     setUploading(true);
     try {
-      const form = new FormData();
-      form.append("file", file);
-      form.append("recordId", recordId);
-      form.append("langType", langType);
-      if (langCode) form.append("langCode", langCode);
-      if (langLabel) form.append("langLabel", langLabel);
+      // Step 1: Upload file directly from browser to Vercel Blob storage.
+      // This bypasses the Next.js 4.5 MB body-size limit entirely.
+      const blob = await upload(
+        `records/${recordId}/${langType}_${file.name}`,
+        file,
+        {
+          access: "public",
+          handleUploadUrl: "/api/documents/upload",
+          clientPayload: JSON.stringify({ recordId, langType, langCode, langLabel }),
+        }
+      );
 
-      const res = await fetch("/api/documents/upload", { method: "POST", body: form });
-      if (!res.ok) throw new Error((await res.json()).error ?? "Upload failed");
+      // Step 2: Save the blob URL and metadata to the database.
+      const saveRes = await fetch("/api/documents/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          blobUrl: blob.url,
+          recordId,
+          langType,
+          langCode: langCode || null,
+          langLabel: langLabel || null,
+          fileName: file.name,
+          fileSize: file.size,
+        }),
+      });
+      if (!saveRes.ok) throw new Error((await saveRes.json()).error ?? "Failed to save document");
 
       toast.success(`${label} uploaded successfully`);
       onUpdate();

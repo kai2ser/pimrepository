@@ -1,74 +1,53 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
-import { put } from "@vercel/blob";
-import { upsertDocument } from "@/modules/documents/queries";
+import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 
-// Accepted file types for document attachments
-const ACCEPTED_TYPES: Record<string, string> = {
-  "application/pdf": "pdf",
-  "application/msword": "doc",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
-  "text/plain": "txt",
-};
+// Accepted MIME types for document attachments
+const ACCEPTED_TYPES = [
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "text/plain",
+];
 
 // POST /api/documents/upload
-// multipart form: file, recordId, langType, langCode?, langLabel?
-export async function POST(req: NextRequest) {
+// Called twice by @vercel/blob/client:
+//   1. { type: "blob.generate-client-token" }  → returns a short-lived upload token
+//   2. { type: "blob.upload-completed" }        → fires after the file lands in Blob storage
+//      (we do NOT save to DB here; the client calls /api/documents/save instead)
+export async function POST(request: NextRequest) {
+  const body = (await request.json()) as HandleUploadBody;
+
   try {
-    const form = await req.formData();
+    const jsonResponse = await handleUpload({
+      body,
+      request,
+      onBeforeGenerateToken: async (pathname, clientPayload) => {
+        // Validate metadata sent from the client
+        const payload = clientPayload ? JSON.parse(clientPayload) : {};
+        const { langType } = payload as { langType?: string };
 
-    const file = form.get("file") as File | null;
-    const recordId = form.get("recordId") as string | null;
-    const langType = form.get("langType") as "ENG" | "ORI" | null;
-    const langCode = form.get("langCode") as string | null;
-    const langLabel = form.get("langLabel") as string | null;
+        if (!langType || !["ENG", "ORI"].includes(langType)) {
+          throw new Error("langType must be ENG or ORI");
+        }
 
-    if (!file || !recordId || !langType) {
-      return NextResponse.json(
-        { error: "file, recordId, and langType are required" },
-        { status: 400 }
-      );
-    }
-
-    if (!["ENG", "ORI"].includes(langType)) {
-      return NextResponse.json(
-        { error: "langType must be ENG or ORI" },
-        { status: 400 }
-      );
-    }
-
-    if (!ACCEPTED_TYPES[file.type]) {
-      return NextResponse.json(
-        { error: "Only PDF, Word (.doc/.docx), and Text (.txt) files are accepted" },
-        { status: 400 }
-      );
-    }
-
-    // Upload to Vercel Blob
-    const blob = await put(
-      `records/${recordId}/${langType}_${file.name}`,
-      file,
-      {
-        access: "public",
-        contentType: file.type,
-      }
-    );
-
-    // Save reference in DB (upsert: replaces any existing doc of same lang)
-    const doc = await upsertDocument({
-      recordId,
-      langType,
-      langCode: langCode ?? undefined,
-      langLabel: langLabel ?? undefined,
-      blobUrl: blob.url,
-      fileName: file.name,
-      fileSize: file.size,
+        return {
+          allowedContentTypes: ACCEPTED_TYPES,
+          maximumSizeInBytes: 50 * 1024 * 1024, // 50 MB
+          // Pass the client payload through so onUploadCompleted receives it
+          tokenPayload: clientPayload ?? "",
+        };
+      },
+      // onUploadCompleted is called by Vercel's infrastructure after the blob
+      // is stored. We keep it as a no-op here; the client calls /api/documents/save
+      // directly after upload() resolves, giving us synchronous DB feedback.
+      onUploadCompleted: async () => {},
     });
 
-    return NextResponse.json(doc, { status: 201 });
+    return NextResponse.json(jsonResponse);
   } catch (err) {
     console.error("[POST /api/documents/upload]", err);
-    return NextResponse.json({ error: "Upload failed" }, { status: 500 });
+    return NextResponse.json({ error: String(err) }, { status: 400 });
   }
 }

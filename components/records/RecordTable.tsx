@@ -39,10 +39,22 @@ import {
   ChevronRight,
   ExternalLink,
   FileText,
+  Loader2,
   Plus,
   Search,
+  Trash2,
   X,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface CountryOption { iso3: string; name: string; }
 
@@ -52,11 +64,30 @@ interface RecordTableProps {
 }
 
 export function RecordTable({ records, countries }: RecordTableProps) {
+  const router = useRouter();
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
   const [countryFilter, setCountryFilter] = useState("all");
   const [policyTierFilter, setPolicyTierFilter] = useState("all");
   const [strategyFilter, setStrategyFilter] = useState("all");
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/records/${deleteId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Delete failed");
+      toast.success("Record deleted");
+      setDeleteId(null);
+      router.refresh();
+    } catch {
+      toast.error("Failed to delete record");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   // Build iso3 → display name lookup
   const countryNameMap = useMemo(
@@ -191,6 +222,15 @@ export function RecordTable({ records, countries }: RecordTableProps) {
                 <FileText className="h-3.5 w-3.5" />
               </Button>
             </Link>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+              title="Delete record"
+              onClick={() => setDeleteId(row.original.id)}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
           </div>
         ),
       },
@@ -368,6 +408,34 @@ export function RecordTable({ records, countries }: RecordTableProps) {
           </Button>
         </div>
       </div>
+
+      {/* Delete confirmation dialog */}
+      <Dialog open={deleteId !== null} onOpenChange={(open) => { if (!open && !deleting) setDeleteId(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete this record?</DialogTitle>
+            <DialogDescription>
+              This will permanently delete the policy record and any uploaded
+              document files. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteId(null)} disabled={deleting}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+              {deleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Deleting…
+                </>
+              ) : (
+                "Delete Record"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

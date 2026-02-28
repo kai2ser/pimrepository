@@ -119,6 +119,30 @@ export function RecordForm({ record, documents = [], mode }: RecordFormProps) {
             <Input id="source" {...register("source")} placeholder="e.g. Ministry of Finance" />
           </div>
 
+          {/* Native language name + attachment */}
+          <div className="sm:col-span-2 space-y-1.5">
+            <Label htmlFor="nameOrig">Document Name (Native Language)</Label>
+            <Input
+              id="nameOrig"
+              {...register("nameOrig")}
+              placeholder="Title in original language (if different)"
+            />
+
+            {/* File attachment slot — only active in edit mode */}
+            {mode === "edit" && record ? (
+              <DocAttachment
+                langType="ORI"
+                recordId={record.id}
+                document={oriDoc}
+                onUpdate={(doc) => setOriDoc(doc)}
+              />
+            ) : (
+              <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1">
+                📎 File attachment available after saving the record
+              </p>
+            )}
+          </div>
+
           {/* English name + attachment */}
           <div className="sm:col-span-2 space-y-1.5">
             <Label htmlFor="nameEng">Document Name (English) *</Label>
@@ -138,30 +162,6 @@ export function RecordForm({ record, documents = [], mode }: RecordFormProps) {
                 recordId={record.id}
                 document={engDoc}
                 onUpdate={(doc) => setEngDoc(doc)}
-              />
-            ) : (
-              <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1">
-                📎 File attachment available after saving the record
-              </p>
-            )}
-          </div>
-
-          {/* Native language name + attachment */}
-          <div className="sm:col-span-2 space-y-1.5">
-            <Label htmlFor="nameOrig">Document Name (Native Language)</Label>
-            <Input
-              id="nameOrig"
-              {...register("nameOrig")}
-              placeholder="Title in original language (if different)"
-            />
-
-            {/* File attachment slot — only active in edit mode */}
-            {mode === "edit" && record ? (
-              <DocAttachment
-                langType="ORI"
-                recordId={record.id}
-                document={oriDoc}
-                onUpdate={(doc) => setOriDoc(doc)}
               />
             ) : (
               <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1">

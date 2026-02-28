@@ -4,6 +4,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { put } from "@vercel/blob";
 import { upsertDocument } from "@/modules/documents/queries";
 
+// Accepted file types for document attachments
+const ACCEPTED_TYPES: Record<string, string> = {
+  "application/pdf": "pdf",
+  "application/msword": "doc",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+  "text/plain": "txt",
+};
+
 // POST /api/documents/upload
 // multipart form: file, recordId, langType, langCode?, langLabel?
 export async function POST(req: NextRequest) {
@@ -30,18 +38,22 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (file.type !== "application/pdf") {
+    if (!ACCEPTED_TYPES[file.type]) {
       return NextResponse.json(
-        { error: "Only PDF files are accepted" },
+        { error: "Only PDF, Word (.doc/.docx), and Text (.txt) files are accepted" },
         { status: 400 }
       );
     }
 
     // Upload to Vercel Blob
-    const blob = await put(`records/${recordId}/${langType}_${file.name}`, file, {
-      access: "public",
-      contentType: "application/pdf",
-    });
+    const blob = await put(
+      `records/${recordId}/${langType}_${file.name}`,
+      file,
+      {
+        access: "public",
+        contentType: file.type,
+      }
+    );
 
     // Save reference in DB (upsert: replaces any existing doc of same lang)
     const doc = await upsertDocument({

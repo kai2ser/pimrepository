@@ -18,11 +18,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { policyRecordSchema, type PolicyRecordInput } from "@/modules/records/schema";
-import type { PolicyRecord } from "@/drizzle/schema";
+import type { Document, PolicyRecord } from "@/drizzle/schema";
 import { Loader2, Save } from "lucide-react";
+import { DocAttachment } from "@/components/documents/DocAttachment";
 
 interface RecordFormProps {
   record?: PolicyRecord;
+  documents?: Document[];
   mode: "create" | "edit";
 }
 
@@ -31,9 +33,17 @@ function FieldError({ message }: { message?: string }) {
   return <p className="text-xs text-destructive mt-1">{message}</p>;
 }
 
-export function RecordForm({ record, mode }: RecordFormProps) {
+export function RecordForm({ record, documents = [], mode }: RecordFormProps) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
+
+  // Local document state so uploads reflect immediately without page reload
+  const [engDoc, setEngDoc] = useState<Document | null>(
+    documents.find((d) => d.langType === "ENG") ?? null
+  );
+  const [oriDoc, setOriDoc] = useState<Document | null>(
+    documents.find((d) => d.langType === "ORI") ?? null
+  );
 
   const {
     register,
@@ -90,21 +100,26 @@ export function RecordForm({ record, mode }: RecordFormProps) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-      {/* Identity */}
+
+      {/* ── Document Identity ──────────────────────────────────────────── */}
       <section className="space-y-4">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Document Identity
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
           <div className="space-y-1.5">
             <Label htmlFor="country">Country *</Label>
             <Input id="country" {...register("country")} placeholder="e.g. Kenya" />
             <FieldError message={errors.country?.message} />
           </div>
+
           <div className="space-y-1.5">
             <Label htmlFor="source">Source / Issuing Body</Label>
             <Input id="source" {...register("source")} placeholder="e.g. Ministry of Finance" />
           </div>
+
+          {/* English name + attachment */}
           <div className="sm:col-span-2 space-y-1.5">
             <Label htmlFor="nameEng">Document Name (English) *</Label>
             <Input
@@ -113,7 +128,25 @@ export function RecordForm({ record, mode }: RecordFormProps) {
               placeholder="Full title in English"
             />
             <FieldError message={errors.nameEng?.message} />
+
+            {/* File attachment slot — only active in edit mode */}
+            {mode === "edit" && record ? (
+              <DocAttachment
+                langType="ENG"
+                langCode="en"
+                langLabel="English"
+                recordId={record.id}
+                document={engDoc}
+                onUpdate={(doc) => setEngDoc(doc)}
+              />
+            ) : (
+              <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1">
+                📎 File attachment available after saving the record
+              </p>
+            )}
           </div>
+
+          {/* Native language name + attachment */}
           <div className="sm:col-span-2 space-y-1.5">
             <Label htmlFor="nameOrig">Document Name (Native Language)</Label>
             <Input
@@ -121,13 +154,28 @@ export function RecordForm({ record, mode }: RecordFormProps) {
               {...register("nameOrig")}
               placeholder="Title in original language (if different)"
             />
+
+            {/* File attachment slot — only active in edit mode */}
+            {mode === "edit" && record ? (
+              <DocAttachment
+                langType="ORI"
+                recordId={record.id}
+                document={oriDoc}
+                onUpdate={(doc) => setOriDoc(doc)}
+              />
+            ) : (
+              <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1">
+                📎 File attachment available after saving the record
+              </p>
+            )}
           </div>
+
         </div>
       </section>
 
       <Separator />
 
-      {/* Dates */}
+      {/* ── Publication ────────────────────────────────────────────────── */}
       <section className="space-y-4">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Publication
@@ -135,48 +183,28 @@ export function RecordForm({ record, mode }: RecordFormProps) {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div className="space-y-1.5">
             <Label htmlFor="year">Year</Label>
-            <Input
-              id="year"
-              type="number"
-              {...register("year")}
-              placeholder="e.g. 2020"
-            />
+            <Input id="year" type="number" {...register("year")} placeholder="e.g. 2020" />
             <FieldError message={errors.year?.message} />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="yearRevised">Year Revised</Label>
-            <Input
-              id="yearRevised"
-              type="number"
-              {...register("yearRevised")}
-              placeholder="e.g. 2023"
-            />
+            <Input id="yearRevised" type="number" {...register("yearRevised")} placeholder="e.g. 2023" />
             <FieldError message={errors.yearRevised?.message} />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="pages">Pages</Label>
-            <Input
-              id="pages"
-              type="number"
-              {...register("pages")}
-              placeholder="e.g. 64"
-            />
+            <Input id="pages" type="number" {...register("pages")} placeholder="e.g. 64" />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="tokens">Tokens</Label>
-            <Input
-              id="tokens"
-              type="number"
-              {...register("tokens")}
-              placeholder="e.g. 42000"
-            />
+            <Input id="tokens" type="number" {...register("tokens")} placeholder="e.g. 42000" />
           </div>
         </div>
       </section>
 
       <Separator />
 
-      {/* Classification */}
+      {/* ── Classification ─────────────────────────────────────────────── */}
       <section className="space-y-4">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Classification
@@ -196,9 +224,7 @@ export function RecordForm({ record, mode }: RecordFormProps) {
               <SelectContent>
                 <SelectItem value="none">None</SelectItem>
                 {[1, 2, 3, 4, 5].map((t) => (
-                  <SelectItem key={t} value={String(t)}>
-                    Tier {t}
-                  </SelectItem>
+                  <SelectItem key={t} value={String(t)}>Tier {t}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -217,9 +243,7 @@ export function RecordForm({ record, mode }: RecordFormProps) {
               <SelectContent>
                 <SelectItem value="none">None</SelectItem>
                 {[1, 2, 3, 4, 5].map((t) => (
-                  <SelectItem key={t} value={String(t)}>
-                    Tier {t}
-                  </SelectItem>
+                  <SelectItem key={t} value={String(t)}>Tier {t}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -229,7 +253,7 @@ export function RecordForm({ record, mode }: RecordFormProps) {
 
       <Separator />
 
-      {/* Content */}
+      {/* ── Content ────────────────────────────────────────────────────── */}
       <section className="space-y-4">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Content
@@ -255,37 +279,21 @@ export function RecordForm({ record, mode }: RecordFormProps) {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="link">External Link</Label>
-            <Input
-              id="link"
-              type="url"
-              {...register("link")}
-              placeholder="https://…"
-            />
+            <Input id="link" type="url" {...register("link")} placeholder="https://…" />
             <FieldError message={errors.link?.message} />
           </div>
         </div>
       </section>
 
       <div className="flex gap-3 justify-end pt-2">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => router.back()}
-          disabled={saving}
-        >
+        <Button type="button" variant="outline" onClick={() => router.back()} disabled={saving}>
           Cancel
         </Button>
         <Button type="submit" disabled={saving}>
           {saving ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Saving…
-            </>
+            <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Saving…</>
           ) : (
-            <>
-              <Save className="h-4 w-4 mr-2" />
-              {mode === "create" ? "Create Record" : "Save Changes"}
-            </>
+            <><Save className="h-4 w-4 mr-2" />{mode === "create" ? "Create Record" : "Save Changes"}</>
           )}
         </Button>
       </div>

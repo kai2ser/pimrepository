@@ -30,7 +30,7 @@ export default async function EditRecordPage({
         <p className="text-muted-foreground text-sm mt-1">{record.nameEng}</p>
       </div>
 
-      <RecordForm record={record} mode="edit" />
+      <RecordForm record={record} documents={record.documents} mode="edit" />
     </div>
   );
 }

@@ -7,7 +7,7 @@ const POLICY_TIERS = [
   {
     code: "Tier 1",
     label: "Primary Legislation",
-    tagline: "the "why" and "what"",
+    tagline: `the "why" and "what"`,
     color: {
       badge: "bg-blue-50 text-blue-700 border-blue-200",
       dot: "bg-blue-500",
@@ -18,7 +18,7 @@ const POLICY_TIERS = [
   {
     code: "Tier 2",
     label: "Secondary Regulations / Decrees",
-    tagline: "the "who"",
+    tagline: `the "who"`,
     color: {
       badge: "bg-indigo-50 text-indigo-700 border-indigo-200",
       dot: "bg-indigo-500",
@@ -29,7 +29,7 @@ const POLICY_TIERS = [
   {
     code: "Tier 3",
     label: "Procedural Guidelines and Methodological Guidance",
-    tagline: "the "how"",
+    tagline: `the "how"`,
     color: {
       badge: "bg-violet-50 text-violet-700 border-violet-200",
       dot: "bg-violet-500",

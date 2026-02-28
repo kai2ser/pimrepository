@@ -12,6 +12,7 @@ import {
   Calendar,
   ExternalLink,
   FileText,
+  Info,
   MapPin,
   Pencil,
 } from "lucide-react";
@@ -130,6 +131,25 @@ export default async function RecordDetailPage({
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Document Files
         </h2>
+
+        {/* Naming convention recommendation */}
+        <div className="border border-blue-200 bg-blue-50 rounded-md p-4 space-y-2.5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-blue-700 flex items-center gap-1.5">
+            <Info className="h-3.5 w-3.5 shrink-0" />
+            Recommendation
+          </p>
+          <p className="text-sm text-blue-900 leading-relaxed">
+            When adding documents, please follow this final naming convention:
+          </p>
+          <p className="text-xs font-mono text-blue-800 bg-blue-100 rounded px-2.5 py-1.5 border border-blue-200">
+            [Country] [Agency] [Year] [Name] [Language: Original Language (OL) or English (ENG)]
+          </p>
+          <div className="text-xs font-mono text-blue-800 space-y-1 leading-relaxed">
+            <p>Serbia Cabinet 2023 O KAPITALNIM PROJEKTIMA Decree on Public Investment Management No 23 (OL)</p>
+            <p>Serbia Cabinet 2023 Decree on Public Investment Management No 23 (ENG)</p>
+          </div>
+        </div>
+
         <DocumentSection recordId={id} initialDocuments={record.documents} />
       </div>
 

@@ -13,7 +13,7 @@ const optionalYear = z.preprocess(
 
 const optionalTier = z.preprocess(
   (v) => (v === "" || v == null ? null : Number(v)),
-  z.number().int().min(1).max(5).nullable().optional()
+  z.number().int().min(1).max(4).nullable().optional()
 );
 
 export const policyRecordSchema = z.object({

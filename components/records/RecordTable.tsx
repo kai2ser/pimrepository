@@ -31,6 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TierBadge } from "./TierBadge";
+import { TIERS } from "@/lib/tiers";
 import type { PolicyRecord } from "@/drizzle/schema";
 import {
   ArrowUpDown,
@@ -234,14 +235,14 @@ export function RecordTable({ records, countries }: RecordTableProps) {
           </Select>
 
           <Select value={tierFilter} onValueChange={setTierFilter}>
-            <SelectTrigger className="w-[150px] h-9">
+            <SelectTrigger className="w-[200px] h-9">
               <SelectValue placeholder="All tiers" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All tiers</SelectItem>
-              {[1, 2, 3, 4, 5].map((t) => (
-                <SelectItem key={t} value={String(t)}>
-                  Tier {t}
+              {TIERS.map((t) => (
+                <SelectItem key={t.value} value={String(t.value)}>
+                  {t.label}
                 </SelectItem>
               ))}
             </SelectContent>

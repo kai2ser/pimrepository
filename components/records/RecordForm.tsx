@@ -21,6 +21,7 @@ import { policyRecordSchema, type PolicyRecordInput } from "@/modules/records/sc
 import type { Document, PolicyRecord } from "@/drizzle/schema";
 import { Loader2, Save } from "lucide-react";
 import { DocAttachment } from "@/components/documents/DocAttachment";
+import { TIERS } from "@/lib/tiers";
 
 interface RecordFormProps {
   record?: PolicyRecord;
@@ -223,8 +224,10 @@ export function RecordForm({ record, documents = [], mode }: RecordFormProps) {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">None</SelectItem>
-                {[1, 2, 3, 4, 5].map((t) => (
-                  <SelectItem key={t} value={String(t)}>Tier {t}</SelectItem>
+                {TIERS.map((t) => (
+                  <SelectItem key={t.value} value={String(t.value)}>
+                    {t.label}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -242,8 +245,10 @@ export function RecordForm({ record, documents = [], mode }: RecordFormProps) {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">None</SelectItem>
-                {[1, 2, 3, 4, 5].map((t) => (
-                  <SelectItem key={t} value={String(t)}>Tier {t}</SelectItem>
+                {TIERS.map((t) => (
+                  <SelectItem key={t.value} value={String(t.value)}>
+                    {t.label}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>

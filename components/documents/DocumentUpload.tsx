@@ -53,6 +53,14 @@ export function DocumentUpload({ recordId, documents, onUpdate }: DocumentUpload
   return (
     <div className="space-y-4">
       <DocSlot
+        label="Native Language Document"
+        langType="ORI"
+        existing={oriDoc}
+        recordId={recordId}
+        onUpdate={onUpdate}
+        showLangSelector
+      />
+      <DocSlot
         label="English Document"
         langType="ENG"
         langCode="en"
@@ -60,14 +68,6 @@ export function DocumentUpload({ recordId, documents, onUpdate }: DocumentUpload
         existing={engDoc}
         recordId={recordId}
         onUpdate={onUpdate}
-      />
-      <DocSlot
-        label="Native Language Document"
-        langType="ORI"
-        existing={oriDoc}
-        recordId={recordId}
-        onUpdate={onUpdate}
-        showLangSelector
       />
     </div>
   );

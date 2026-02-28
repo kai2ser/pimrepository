@@ -68,7 +68,6 @@ export function RecordForm({ record, documents = [], mode }: RecordFormProps) {
       comment: record?.comment ?? "",
       link: record?.link ?? "",
       pages: record?.pages ?? undefined,
-      tokens: record?.tokens ?? undefined,
     },
   });
 
@@ -185,7 +184,7 @@ export function RecordForm({ record, documents = [], mode }: RecordFormProps) {
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Publication
         </h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           <div className="space-y-1.5">
             <Label htmlFor="year">Year</Label>
             <Input id="year" type="number" {...register("year")} placeholder="e.g. 2020" />
@@ -199,10 +198,6 @@ export function RecordForm({ record, documents = [], mode }: RecordFormProps) {
           <div className="space-y-1.5">
             <Label htmlFor="pages">Pages</Label>
             <Input id="pages" type="number" {...register("pages")} placeholder="e.g. 64" />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="tokens">Tokens</Label>
-            <Input id="tokens" type="number" {...register("tokens")} placeholder="e.g. 42000" />
           </div>
         </div>
       </section>

@@ -217,9 +217,12 @@ export function RecordForm({ record, documents = [], mode }: RecordFormProps) {
             <Label>Policy Guidance Tier</Label>
             <Select
               value={watch("policyGuidanceTier")?.toString() ?? "none"}
-              onValueChange={(v) =>
-                setValue("policyGuidanceTier", v === "none" ? null : parseInt(v))
-              }
+              onValueChange={(v) => {
+                const parsed = v === "none" ? null : parseInt(v);
+                setValue("policyGuidanceTier", parsed);
+                // Clear strategy whenever tier moves away from Tier 4
+                if (parsed !== 4) setValue("strategyTier", null);
+              }}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select tier…" />
@@ -235,28 +238,41 @@ export function RecordForm({ record, documents = [], mode }: RecordFormProps) {
             </Select>
           </div>
 
-          {/* Strategy Classification */}
-          <div className="space-y-1.5">
-            <Label>Strategy Classification</Label>
-            <Select
-              value={watch("strategyTier")?.toString() ?? "none"}
-              onValueChange={(v) =>
-                setValue("strategyTier", v === "none" ? null : parseInt(v))
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select strategy type…" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">None</SelectItem>
-                {STRATEGY_TYPES.map((s) => (
-                  <SelectItem key={s.value} value={String(s.value)}>
-                    {s.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Strategy Classification — only available for Tier 4 records */}
+          {(() => {
+            const isStrategyEnabled = watch("policyGuidanceTier") === 4;
+            return (
+              <div className="space-y-1.5">
+                <Label className={isStrategyEnabled ? undefined : "text-muted-foreground"}>
+                  Strategy Classification
+                </Label>
+                <Select
+                  value={watch("strategyTier")?.toString() ?? "none"}
+                  onValueChange={(v) =>
+                    setValue("strategyTier", v === "none" ? null : parseInt(v))
+                  }
+                  disabled={!isStrategyEnabled}
+                >
+                  <SelectTrigger className={!isStrategyEnabled ? "opacity-50 cursor-not-allowed" : undefined}>
+                    <SelectValue placeholder="Select strategy type…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {STRATEGY_TYPES.map((s) => (
+                      <SelectItem key={s.value} value={String(s.value)}>
+                        {s.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {!isStrategyEnabled && (
+                  <p className="text-xs text-muted-foreground">
+                    Only available for <span className="font-medium">Tier 4 — Strategies for Project Prioritization &amp; Alignment</span> records.
+                  </p>
+                )}
+              </div>
+            );
+          })()}
 
         </div>
       </section>

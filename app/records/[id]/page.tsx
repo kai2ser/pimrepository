@@ -148,6 +148,9 @@ export default async function RecordDetailPage({
             <p>Serbia Cabinet 2023 O KAPITALNIM PROJEKTIMA Decree on Public Investment Management No 23 (OL)</p>
             <p>Serbia Cabinet 2023 Decree on Public Investment Management No 23 (ENG)</p>
           </div>
+          <p className="text-sm text-blue-900 leading-relaxed">
+            To allow for formal citation of policies, please provide formal designation of the policy (e.g., Cabinet Decision 9/2026).
+          </p>
         </div>
 
         <DocumentSection recordId={id} initialDocuments={record.documents} />

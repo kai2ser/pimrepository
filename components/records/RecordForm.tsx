@@ -209,7 +209,7 @@ export function RecordForm({ record, documents = [], mode }: RecordFormProps) {
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Classification
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4">
 
           {/* Policy Guidance Tier */}
           <div className="space-y-1.5">

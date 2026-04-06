@@ -35,10 +35,13 @@ import { TIERS, STRATEGY_TYPES } from "@/lib/tiers";
 import type { PolicyRecord } from "@/drizzle/schema";
 import {
   ArrowUpDown,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
   ExternalLink,
   FileText,
+  LayoutDashboard,
   Loader2,
   Plus,
   Search,
@@ -59,12 +62,21 @@ import {
 
 interface CountryOption { iso3: string; name: string; }
 
+interface CountrySummaryRow {
+  iso3: string;
+  name: string;
+  totalRecords: number;
+  nonEnglishDocs: number;
+  latestUpdate: Date;
+}
+
 interface RecordTableProps {
   records: PolicyRecord[];
   countries: CountryOption[];
+  countrySummary?: CountrySummaryRow[];
 }
 
-export function RecordTable({ records, countries }: RecordTableProps) {
+export function RecordTable({ records, countries, countrySummary = [] }: RecordTableProps) {
   const router = useRouter();
   const { data: session } = useSession();
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -74,6 +86,7 @@ export function RecordTable({ records, countries }: RecordTableProps) {
   const [strategyFilter, setStrategyFilter] = useState("all");
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [dashboardOpen, setDashboardOpen] = useState(true);
 
   const handleDelete = async () => {
     if (!deleteId) return;
@@ -346,6 +359,78 @@ export function RecordTable({ records, countries }: RecordTableProps) {
           </Link>
         )}
       </div>
+
+      {/* Country summary dashboard */}
+      {countrySummary.length > 0 && (
+        <div className="rounded-md border">
+          <button
+            type="button"
+            onClick={() => setDashboardOpen((v) => !v)}
+            className="flex items-center justify-between w-full px-4 py-2.5 text-left hover:bg-muted/40 transition-colors"
+          >
+            <span className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              <LayoutDashboard className="h-3.5 w-3.5" />
+              Country Overview
+              <Badge variant="secondary" className="text-[10px] font-normal ml-1">
+                {countrySummary.length}
+              </Badge>
+            </span>
+            {dashboardOpen ? (
+              <ChevronUp className="h-4 w-4 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            )}
+          </button>
+
+          {dashboardOpen && (
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/40">
+                  <TableHead className="text-xs font-semibold uppercase tracking-wide">Country</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-center w-[120px]">Records</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-center w-[150px]">Non-English Docs</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-right w-[140px]">Latest Update</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {countrySummary.map((row) => (
+                  <TableRow key={row.iso3} className="hover:bg-muted/30">
+                    <TableCell className="py-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm">{row.name}</span>
+                        <span className="text-[10px] font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                          {row.iso3}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center py-2">
+                      <Badge variant="secondary" className="text-xs font-medium">
+                        {row.totalRecords}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-center py-2">
+                      {row.nonEnglishDocs > 0 ? (
+                        <Badge variant="outline" className="text-xs font-medium">
+                          {row.nonEnglishDocs}
+                        </Badge>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right py-2 text-sm text-muted-foreground tabular-nums">
+                      {new Date(row.latestUpdate).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </div>
+      )}
 
       {/* Result count */}
       <p className="text-sm text-muted-foreground">

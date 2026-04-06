@@ -26,7 +26,7 @@ export async function listRecords(filters: RecordFilters = {}) {
   }
 
   if (filters.country) {
-    conditions.push(ilike(policyRecords.country, filters.country));
+    conditions.push(eq(policyRecords.country, filters.country));
   }
 
   if (filters.policyGuidanceTier !== undefined) {
@@ -48,18 +48,14 @@ export async function listRecords(filters: RecordFilters = {}) {
 
 // ── Get single record with its documents ─────────────────────────────────
 export async function getRecordWithDocs(id: string): Promise<PolicyRecordWithDocs | null> {
-  const records = await db
-    .select()
-    .from(policyRecords)
-    .where(eq(policyRecords.id, id))
-    .limit(1);
+  // Run both queries in parallel — the documents query is cheap even if the
+  // record turns out not to exist (it just returns []).
+  const [records, docs] = await Promise.all([
+    db.select().from(policyRecords).where(eq(policyRecords.id, id)).limit(1),
+    db.select().from(documents).where(eq(documents.recordId, id)),
+  ]);
 
   if (records.length === 0) return null;
-
-  const docs = await db
-    .select()
-    .from(documents)
-    .where(eq(documents.recordId, id));
 
   return { ...records[0], documents: docs };
 }

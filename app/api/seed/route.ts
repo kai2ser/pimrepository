@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { policyRecords } from "@/drizzle/schema";
+import { requireAuth } from "@/lib/auth";
 
 const SEED_RECORDS = [
   {
@@ -158,6 +159,9 @@ const SEED_RECORDS = [
 ];
 
 export async function POST() {
+  const authResult = await requireAuth();
+  if (!authResult.authorized) return authResult.response;
+
   try {
     // Only seed if table is empty
     const existing = await db.select({ id: policyRecords.id }).from(policyRecords).limit(1);

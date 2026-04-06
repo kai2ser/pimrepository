@@ -1,7 +1,6 @@
-export const dynamic = "force-dynamic";
-
 import { NextRequest, NextResponse } from "next/server";
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
+import { requireAuth } from "@/lib/auth";
 
 // Accepted MIME types for document attachments
 const ACCEPTED_TYPES = [
@@ -17,6 +16,9 @@ const ACCEPTED_TYPES = [
 //   2. { type: "blob.upload-completed" }        → fires after the file lands in Blob storage
 //      (we do NOT save to DB here; the client calls /api/documents/save instead)
 export async function POST(request: NextRequest) {
+  const authResult = await requireAuth();
+  if (!authResult.authorized) return authResult.response;
+
   const body = (await request.json()) as HandleUploadBody;
 
   try {

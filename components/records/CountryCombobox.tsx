@@ -43,9 +43,12 @@ export function CountryCombobox({
   // Load countries once on mount
   useEffect(() => {
     fetch("/api/countries")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
       .then((data: CountryOption[]) => setOptions(data))
-      .catch(console.error)
+      .catch((err) => console.error("Failed to load countries:", err))
       .finally(() => setLoading(false));
   }, []);
 

@@ -30,9 +30,13 @@ interface RecordFormProps {
   mode: "create" | "edit";
 }
 
-function FieldError({ message }: { message?: string }) {
+function FieldError({ id, message }: { id?: string; message?: string }) {
   if (!message) return null;
-  return <p className="text-xs text-destructive mt-1">{message}</p>;
+  return (
+    <p id={id} role="alert" className="text-xs text-destructive mt-1">
+      {message}
+    </p>
+  );
 }
 
 export function RecordForm({ record, documents = [], mode }: RecordFormProps) {
@@ -74,6 +78,7 @@ export function RecordForm({ record, documents = [], mode }: RecordFormProps) {
   const onSubmit = async (data: PolicyRecordInput) => {
     setSaving(true);
     try {
+      if (mode === "edit" && !record?.id) throw new Error("Record required for edit mode");
       const url = mode === "create" ? "/api/records" : `/api/records/${record!.id}`;
       const method = mode === "create" ? "POST" : "PATCH";
 
@@ -115,7 +120,7 @@ export function RecordForm({ record, documents = [], mode }: RecordFormProps) {
               value={watch("country") || null}
               onChange={(iso3) => setValue("country", iso3 ?? "")}
             />
-            <FieldError message={errors.country?.message} />
+            <FieldError id="country-error" message={errors.country?.message} />
           </div>
 
           <div className="space-y-1.5">
@@ -152,10 +157,11 @@ export function RecordForm({ record, documents = [], mode }: RecordFormProps) {
             <Label htmlFor="nameEng">Document Name (English) *</Label>
             <Input
               id="nameEng"
+              aria-describedby={errors.nameEng ? "nameEng-error" : undefined}
               {...register("nameEng")}
               placeholder="Full title in English"
             />
-            <FieldError message={errors.nameEng?.message} />
+            <FieldError id="nameEng-error" message={errors.nameEng?.message} />
 
             {/* File attachment slot — only active in edit mode */}
             {mode === "edit" && record ? (
@@ -187,13 +193,13 @@ export function RecordForm({ record, documents = [], mode }: RecordFormProps) {
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           <div className="space-y-1.5">
             <Label htmlFor="year">Year</Label>
-            <Input id="year" type="number" {...register("year")} placeholder="e.g. 2020" />
-            <FieldError message={errors.year?.message} />
+            <Input id="year" type="number" aria-describedby={errors.year ? "year-error" : undefined} {...register("year")} placeholder="e.g. 2020" />
+            <FieldError id="year-error" message={errors.year?.message} />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="yearRevised">Year Revised</Label>
-            <Input id="yearRevised" type="number" {...register("yearRevised")} placeholder="e.g. 2023" />
-            <FieldError message={errors.yearRevised?.message} />
+            <Input id="yearRevised" type="number" aria-describedby={errors.yearRevised ? "yearRevised-error" : undefined} {...register("yearRevised")} placeholder="e.g. 2023" />
+            <FieldError id="yearRevised-error" message={errors.yearRevised?.message} />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="pages">Pages</Label>
@@ -304,14 +310,14 @@ export function RecordForm({ record, documents = [], mode }: RecordFormProps) {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="link">External Link</Label>
-            <Input id="link" type="url" {...register("link")} placeholder="https://…" />
-            <FieldError message={errors.link?.message} />
+            <Input id="link" type="url" aria-describedby={errors.link ? "link-error" : undefined} {...register("link")} placeholder="https://…" />
+            <FieldError id="link-error" message={errors.link?.message} />
           </div>
         </div>
       </section>
 
       <div className="flex gap-3 justify-end pt-2">
-        <Button type="button" variant="outline" onClick={() => router.back()} disabled={saving}>
+        <Button type="button" variant="outline" onClick={() => window.history.length > 1 ? router.back() : router.push("/")} disabled={saving}>
           Cancel
         </Button>
         <Button type="submit" disabled={saving}>

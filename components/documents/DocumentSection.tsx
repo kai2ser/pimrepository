@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { DocumentUpload } from "./DocumentUpload";
 import type { Document } from "@/drizzle/schema";
 
@@ -22,8 +23,9 @@ export function DocumentSection({
         const data = await res.json();
         setDocuments(data.documents ?? []);
       }
-    } catch {
-      // silent
+    } catch (err) {
+      console.error("Failed to refresh documents:", err);
+      toast.error("Could not refresh document list");
     }
   };
 

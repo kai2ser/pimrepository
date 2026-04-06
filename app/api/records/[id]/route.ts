@@ -1,5 +1,3 @@
-export const dynamic = "force-dynamic";
-
 import { NextRequest, NextResponse } from "next/server";
 import {
   getRecordWithDocs,
@@ -7,6 +5,8 @@ import {
   deleteRecord,
 } from "@/modules/records/queries";
 import { policyRecordUpdateSchema } from "@/modules/records/schema";
+import { requireAuth } from "@/lib/auth";
+import { audit } from "@/lib/audit";
 
 // GET /api/records/:id
 export async function GET(
@@ -26,11 +26,14 @@ export async function GET(
   }
 }
 
-// PATCH /api/records/:id
+// PATCH /api/records/:id (auth required)
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authResult = await requireAuth();
+  if (!authResult.authorized) return authResult.response;
+
   try {
     const { id } = await params;
     const body = await req.json();
@@ -48,6 +51,13 @@ export async function PATCH(
       return NextResponse.json({ error: "Record not found" }, { status: 404 });
     }
 
+    audit({
+      session: authResult.session,
+      action: "update",
+      entity: "record",
+      entityId: id,
+      detail: `Updated record`,
+    });
     return NextResponse.json(record);
   } catch (err) {
     console.error("[PATCH /api/records/:id]", err);
@@ -55,14 +65,23 @@ export async function PATCH(
   }
 }
 
-// DELETE /api/records/:id
+// DELETE /api/records/:id (auth required)
 export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authResult = await requireAuth();
+  if (!authResult.authorized) return authResult.response;
+
   try {
     const { id } = await params;
     await deleteRecord(id);
+    audit({
+      session: authResult.session,
+      action: "delete",
+      entity: "record",
+      entityId: id,
+    });
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("[DELETE /api/records/:id]", err);

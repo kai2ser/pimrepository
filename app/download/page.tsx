@@ -1,7 +1,13 @@
+import type { Metadata } from "next";
 import { listCountries, getRecordsWithDocsByCountry } from "@/modules/records/queries";
 import DownloadClient from "./DownloadClient";
 
-export const dynamic = "force-dynamic";
+export const metadata: Metadata = {
+  title: "Download — PIM Repository",
+  description: "Download PIM policy and strategy documents by country in English and native languages.",
+};
+
+export const revalidate = 300; // ISR: re-fetch at most every 5 min
 
 export default async function DownloadPage({
   searchParams,

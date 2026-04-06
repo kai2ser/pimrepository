@@ -18,8 +18,26 @@ import {
 } from "lucide-react";
 import { DeleteRecordButton } from "@/components/records/DeleteRecordButton";
 import { DocumentSection } from "@/components/documents/DocumentSection";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const record = await getRecordWithDocs(id);
+  if (!record) return { title: "Record Not Found" };
+
+  return {
+    title: `${record.nameEng} — PIM Repository`,
+    description: record.overview
+      ? record.overview.slice(0, 160)
+      : `Policy record: ${record.nameEng}`,
+  };
+}
 
 export default async function RecordDetailPage({
   params,
@@ -111,8 +129,8 @@ export default async function RecordDetailPage({
         </div>
       )}
 
-      {/* External link */}
-      {record.link && (
+      {/* External link — only render http(s) URLs */}
+      {record.link && /^https?:\/\//i.test(record.link) && (
         <a
           href={record.link}
           target="_blank"

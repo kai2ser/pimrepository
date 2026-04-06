@@ -46,6 +46,7 @@ import {
   X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -65,6 +66,7 @@ interface RecordTableProps {
 
 export function RecordTable({ records, countries }: RecordTableProps) {
   const router = useRouter();
+  const { data: session } = useSession();
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
   const [countryFilter, setCountryFilter] = useState("all");
@@ -222,15 +224,17 @@ export function RecordTable({ records, countries }: RecordTableProps) {
                 <FileText className="h-3.5 w-3.5" />
               </Button>
             </Link>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
-              title="Delete record"
-              onClick={() => setDeleteId(row.original.id)}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </Button>
+            {session && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                title="Delete record"
+                onClick={() => setDeleteId(row.original.id)}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            )}
           </div>
         ),
       },
@@ -333,12 +337,14 @@ export function RecordTable({ records, countries }: RecordTableProps) {
           )}
         </div>
 
-        <Link href="/records/new">
-          <Button size="sm" className="h-9">
-            <Plus className="h-4 w-4 mr-1.5" />
-            Add Record
-          </Button>
-        </Link>
+        {session && (
+          <Link href="/records/new">
+            <Button size="sm" className="h-9">
+              <Plus className="h-4 w-4 mr-1.5" />
+              Add Record
+            </Button>
+          </Link>
+        )}
       </div>
 
       {/* Result count */}

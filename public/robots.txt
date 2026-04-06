@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /records/new
+Disallow: /records/*/edit
+
+Sitemap: https://pim-policyrepository4.vercel.app/sitemap.xml

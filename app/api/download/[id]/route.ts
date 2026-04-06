@@ -1,5 +1,3 @@
-export const dynamic = "force-dynamic";
-
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { documents } from "@/drizzle/schema";
@@ -30,14 +28,16 @@ export async function GET(
       return NextResponse.json({ error: "Failed to fetch file" }, { status: 502 });
     }
 
-    const fileName = doc.fileName ?? "document";
+    // Sanitise filename for Content-Disposition header
+    const rawName = doc.fileName ?? "document";
+    const safeName = rawName.replace(/[^a-zA-Z0-9._-]/g, "_");
     const contentType = upstream.headers.get("content-type") ?? "application/octet-stream";
 
     return new NextResponse(upstream.body, {
       headers: {
         "Content-Type": contentType,
-        "Content-Disposition": `attachment; filename="${fileName}"`,
-        "Cache-Control": "no-store",
+        "Content-Disposition": `attachment; filename="${safeName}"`,
+        "Cache-Control": "private, no-store",
       },
     });
   } catch {

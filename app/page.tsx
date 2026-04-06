@@ -2,7 +2,7 @@ import { listRecords, listCountries } from "@/modules/records/queries";
 import { RecordTable } from "@/components/records/RecordTable";
 // Stats icons not needed inline — removed unused imports
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60; // ISR: re-fetch at most every 60 s
 
 export default async function HomePage() {
   const [records, countries] = await Promise.all([
@@ -29,7 +29,7 @@ export default async function HomePage() {
       </div>
 
       {/* Stats strip */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="border rounded-lg p-4">
           <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">
             Countries

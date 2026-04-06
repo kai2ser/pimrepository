@@ -5,11 +5,14 @@ import { db } from "@/lib/db";
 import { countries } from "@/drizzle/schema";
 import { COUNTRIES_DATA } from "@/lib/countries-data";
 import { sql } from "drizzle-orm";
+import { requireAuth } from "@/lib/auth";
 
-// POST /api/seed-countries
+// POST /api/seed-countries (auth required)
 // Idempotent — uses INSERT … ON CONFLICT DO NOTHING so it is safe to call
 // multiple times. Returns counts of inserted vs skipped rows.
 export async function POST() {
+  const authResult = await requireAuth();
+  if (!authResult.authorized) return authResult.response;
   try {
     const existing = await db
       .select({ count: sql<number>`count(*)::int` })

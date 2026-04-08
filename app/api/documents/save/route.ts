@@ -31,7 +31,13 @@ export async function POST(req: NextRequest) {
     // Validate blobUrl points to Vercel Blob storage
     try {
       const parsed = new URL(blobUrl);
-      if (!parsed.hostname.endsWith(".public.blob.vercel-storage.com")) {
+      // Exact subdomain match: must be <token>.public.blob.vercel-storage.com
+      const hostParts = parsed.hostname.split(".");
+      if (
+        parsed.protocol !== "https:" ||
+        hostParts.length !== 5 ||
+        hostParts.slice(1).join(".") !== "public.blob.vercel-storage.com"
+      ) {
         return NextResponse.json(
           { error: "blobUrl must be a Vercel Blob URL" },
           { status: 400 }

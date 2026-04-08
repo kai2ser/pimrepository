@@ -39,6 +39,7 @@ export function CountryCombobox({
   const [open, setOpen] = useState(false);
   const [options, setOptions] = useState<CountryOption[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   // Load countries once on mount
   useEffect(() => {
@@ -47,8 +48,14 @@ export function CountryCombobox({
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
       })
-      .then((data: CountryOption[]) => setOptions(data))
-      .catch((err) => console.error("Failed to load countries:", err))
+      .then((data: CountryOption[]) => {
+        setOptions(data);
+        setError(false);
+      })
+      .catch((err) => {
+        console.error("Failed to load countries:", err);
+        setError(true);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -68,6 +75,10 @@ export function CountryCombobox({
             <span className="flex items-center gap-2 text-muted-foreground">
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
               Loading…
+            </span>
+          ) : error ? (
+            <span className="text-destructive text-sm">
+              Failed to load countries
             </span>
           ) : selected ? (
             <span className="flex items-center gap-2">

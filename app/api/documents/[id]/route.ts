@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { del } from "@vercel/blob";
+import { db } from "@/lib/db";
+import { documents } from "@/drizzle/schema";
+import { eq } from "drizzle-orm";
 import { deleteDocument } from "@/modules/documents/queries";
 import { requireAuth } from "@/lib/auth";
 import { audit } from "@/lib/audit";
@@ -15,19 +18,25 @@ export async function DELETE(
   try {
     const { id } = await params;
 
-    // Delete from DB and get the blob URL
-    const doc = await deleteDocument(id);
+    // Look up document first to get the blob URL
+    const [doc] = await db
+      .select()
+      .from(documents)
+      .where(eq(documents.id, id))
+      .limit(1);
 
     if (!doc) {
       return NextResponse.json({ error: "Document not found" }, { status: 404 });
     }
 
-    // Delete from Vercel Blob storage
+    // Delete blob first, then DB record — avoids orphaned blobs
     try {
       await del(doc.blobUrl);
     } catch {
       console.warn("Blob deletion failed (may already be deleted):", doc.blobUrl);
     }
+
+    await deleteDocument(id);
 
     audit({
       session: authResult.session,

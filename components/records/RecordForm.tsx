@@ -317,7 +317,7 @@ export function RecordForm({ record, documents = [], mode }: RecordFormProps) {
       </section>
 
       <div className="flex gap-3 justify-end pt-2">
-        <Button type="button" variant="outline" onClick={() => window.history.length > 1 ? router.back() : router.push("/")} disabled={saving}>
+        <Button type="button" variant="outline" onClick={() => typeof window !== "undefined" && window.history.length > 1 ? router.back() : router.push("/")} disabled={saving}>
           Cancel
         </Button>
         <Button type="submit" disabled={saving}>

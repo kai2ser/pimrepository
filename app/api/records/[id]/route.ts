@@ -19,7 +19,11 @@ export async function GET(
     if (!record) {
       return NextResponse.json({ error: "Record not found" }, { status: 404 });
     }
-    return NextResponse.json(record);
+    return NextResponse.json(record, {
+      headers: {
+        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+      },
+    });
   } catch (err) {
     console.error("[GET /api/records/:id]", err);
     return NextResponse.json({ error: "Failed to fetch record" }, { status: 500 });

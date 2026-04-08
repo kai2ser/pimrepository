@@ -20,7 +20,7 @@ import { DeleteRecordButton } from "@/components/records/DeleteRecordButton";
 import { DocumentSection } from "@/components/documents/DocumentSection";
 import type { Metadata } from "next";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export async function generateMetadata({
   params,

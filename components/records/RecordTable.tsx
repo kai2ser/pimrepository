@@ -66,6 +66,7 @@ interface CountrySummaryRow {
   iso3: string;
   name: string;
   totalRecords: number;
+  engDocs: number;
   nonEnglishDocs: number;
   latestUpdate: Date;
 }
@@ -387,7 +388,8 @@ export function RecordTable({ records, countries, countrySummary = [] }: RecordT
               <TableHeader>
                 <TableRow className="bg-muted/40">
                   <TableHead className="text-xs font-semibold uppercase tracking-wide">Country</TableHead>
-                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-center w-[120px]">Records</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-center w-[100px]">Records</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-center w-[120px]">English Docs</TableHead>
                   <TableHead className="text-xs font-semibold uppercase tracking-wide text-center w-[150px]">Non-English Docs</TableHead>
                   <TableHead className="text-xs font-semibold uppercase tracking-wide text-right w-[140px]">Latest Update</TableHead>
                 </TableRow>
@@ -407,6 +409,15 @@ export function RecordTable({ records, countries, countrySummary = [] }: RecordT
                       <Badge variant="secondary" className="text-xs font-medium">
                         {row.totalRecords}
                       </Badge>
+                    </TableCell>
+                    <TableCell className="text-center py-2">
+                      {row.engDocs > 0 ? (
+                        <Badge variant="outline" className="text-xs font-medium">
+                          {row.engDocs}
+                        </Badge>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-center py-2">
                       {row.nonEnglishDocs > 0 ? (

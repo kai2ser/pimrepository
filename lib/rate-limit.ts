@@ -1,9 +1,8 @@
 /**
  * Simple in-memory rate limiter for serverless API routes.
  *
- * Tracks request counts per IP in a Map with automatic expiry.
- * Suitable for low-to-medium traffic. For high-traffic apps,
- * replace with Redis-backed rate limiting (e.g., @upstash/ratelimit).
+ * Tracks request counts per IP in a Map with lazy expiry cleanup.
+ * Suitable for low-to-medium traffic on Vercel.
  */
 
 interface RateLimitEntry {
@@ -12,14 +11,6 @@ interface RateLimitEntry {
 }
 
 const store = new Map<string, RateLimitEntry>();
-
-// Clean up expired entries every 60 seconds
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, entry] of store) {
-    if (now > entry.resetAt) store.delete(key);
-  }
-}, 60_000);
 
 interface RateLimitOptions {
   /** Maximum number of requests in the window */
@@ -41,6 +32,13 @@ export function rateLimit(
   const { limit = 30, windowSeconds = 60 } = options;
   const now = Date.now();
   const windowMs = windowSeconds * 1000;
+
+  // Lazy cleanup: prune expired entries when map grows large
+  if (store.size > 1000) {
+    for (const [key, entry] of store) {
+      if (now > entry.resetAt) store.delete(key);
+    }
+  }
 
   const entry = store.get(ip);
 

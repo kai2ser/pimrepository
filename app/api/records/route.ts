@@ -13,11 +13,20 @@ export async function GET(req: NextRequest) {
     const pgt = searchParams.get("policyGuidanceTier");
     const st = searchParams.get("strategyTier");
 
+    const pgtNum = pgt ? parseInt(pgt, 10) : undefined;
+    const stNum = st ? parseInt(st, 10) : undefined;
+    const limitParam = searchParams.get("limit");
+    const offsetParam = searchParams.get("offset");
+    const limit = limitParam ? parseInt(limitParam, 10) : undefined;
+    const offset = offsetParam ? parseInt(offsetParam, 10) : undefined;
+
     const records = await listRecords({
       search,
       country,
-      policyGuidanceTier: pgt ? parseInt(pgt) : undefined,
-      strategyTier: st ? parseInt(st) : undefined,
+      policyGuidanceTier: pgtNum && !isNaN(pgtNum) ? pgtNum : undefined,
+      strategyTier: stNum && !isNaN(stNum) ? stNum : undefined,
+      limit: limit && !isNaN(limit) ? Math.min(limit, 500) : undefined,
+      offset: offset && !isNaN(offset) ? offset : undefined,
     });
 
     return NextResponse.json(records, {

@@ -23,7 +23,9 @@ export async function GET(
   }
 
   try {
-    const upstream = await fetch(doc.blobUrl);
+    const upstream = await fetch(doc.blobUrl, {
+      signal: AbortSignal.timeout(30_000), // 30s timeout
+    });
     if (!upstream.ok) {
       return NextResponse.json({ error: "Failed to fetch file" }, { status: 502 });
     }

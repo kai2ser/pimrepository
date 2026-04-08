@@ -19,7 +19,9 @@ export const policyRecords = pgTable(
   "policy_records",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    country: varchar("country", { length: 100 }).notNull(),
+    country: varchar("country", { length: 100 })
+      .notNull()
+      .references(() => countries.iso3),
     nameEng: text("name_eng").notNull(),
     nameOrig: text("name_orig"),
     year: smallint("year"),
@@ -38,6 +40,8 @@ export const policyRecords = pgTable(
   (t) => [
     index("idx_policy_records_country").on(t.country),
     index("idx_policy_records_country_name").on(t.country, t.nameEng),
+    index("idx_policy_records_policy_tier").on(t.policyGuidanceTier),
+    index("idx_policy_records_strategy_tier").on(t.strategyTier),
   ]
 );
 
@@ -68,13 +72,19 @@ export const documents = pgTable(
 // ─── Countries Lookup ──────────────────────────────────────────────────────
 // ISO Alpha-3 keyed lookup table for all sovereign states & territories.
 // gdpBn / pubInvPctGdp / pubInvBn are 2024 estimates (IMF WEO Oct 2024).
-export const countries = pgTable("countries", {
-  iso3:          char("iso3", { length: 3 }).primaryKey(),
-  name:          text("name").notNull(),
-  gdpBn:         numeric("gdp_2024_bn",     { precision: 12, scale: 3 }),
-  pubInvPctGdp:  numeric("pub_inv_pct_gdp", { precision: 6,  scale: 4 }),
-  pubInvBn:      numeric("pub_inv_2024_bn", { precision: 12, scale: 3 }),
-});
+export const countries = pgTable(
+  "countries",
+  {
+    iso3:          char("iso3", { length: 3 }).primaryKey(),
+    name:          text("name").notNull(),
+    gdpBn:         numeric("gdp_2024_bn",     { precision: 12, scale: 3 }),
+    pubInvPctGdp:  numeric("pub_inv_pct_gdp", { precision: 6,  scale: 4 }),
+    pubInvBn:      numeric("pub_inv_2024_bn", { precision: 12, scale: 3 }),
+  },
+  (t) => [
+    index("idx_countries_name").on(t.name),
+  ]
+);
 
 // ─── Auth.js v5 Tables ────────────────────────────────────────────────────
 export const users = pgTable("users", {
@@ -103,16 +113,25 @@ export const accounts = pgTable(
     id_token: text("id_token"),
     session_state: text("session_state"),
   },
-  (t) => [primaryKey({ columns: [t.provider, t.providerAccountId] })]
+  (t) => [
+    primaryKey({ columns: [t.provider, t.providerAccountId] }),
+    index("idx_accounts_user_id").on(t.userId),
+  ]
 );
 
-export const sessions = pgTable("sessions", {
-  sessionToken: text("session_token").primaryKey(),
-  userId: uuid("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  expires: timestamp("expires", { mode: "date" }).notNull(),
-});
+export const sessions = pgTable(
+  "sessions",
+  {
+    sessionToken: text("session_token").primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    expires: timestamp("expires", { mode: "date" }).notNull(),
+  },
+  (t) => [
+    index("idx_sessions_user_id").on(t.userId),
+  ]
+);
 
 export const verificationTokens = pgTable(
   "verification_tokens",
@@ -138,7 +157,11 @@ export const auditLogs = pgTable(
     ip: varchar("ip", { length: 45 }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
-  (t) => [index("idx_audit_logs_created").on(t.createdAt)]
+  (t) => [
+    index("idx_audit_logs_created").on(t.createdAt),
+    index("idx_audit_logs_user_id").on(t.userId),
+    index("idx_audit_logs_entity_id").on(t.entityId),
+  ]
 );
 
 // ─── TypeScript Types ──────────────────────────────────────────────────────

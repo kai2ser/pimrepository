@@ -27,7 +27,14 @@ export async function POST(request: NextRequest) {
       request,
       onBeforeGenerateToken: async (pathname, clientPayload) => {
         // Validate metadata sent from the client
-        const payload = clientPayload ? JSON.parse(clientPayload) : {};
+        let payload: Record<string, unknown> = {};
+        if (clientPayload) {
+          try {
+            payload = JSON.parse(clientPayload);
+          } catch {
+            throw new Error("Invalid client payload JSON");
+          }
+        }
         const { langType } = payload as { langType?: string };
 
         if (!langType || !["ENG", "ORI"].includes(langType)) {

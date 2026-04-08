@@ -24,18 +24,19 @@ const optionalStrategyType = z.preprocess(
 );
 
 export const policyRecordSchema = z.object({
-  country: z.string().min(1, "Country is required"),
-  nameEng: z.string().min(1, "English name is required"),
-  nameOrig: z.string().nullable().optional(),
+  country: z.string().min(1, "Country is required").max(3, "Must be an ISO3 country code"),
+  nameEng: z.string().min(1, "English name is required").max(1000, "Name too long"),
+  nameOrig: z.string().max(1000, "Name too long").nullable().optional(),
   year: optionalYear,
-  source: z.string().nullable().optional(),
+  source: z.string().max(500, "Source too long").nullable().optional(),
   yearRevised: optionalYear,
-  overview: z.string().nullable().optional(),
+  overview: z.string().max(50000, "Overview too long").nullable().optional(),
   policyGuidanceTier: optionalPolicyTier,
   strategyTier: optionalStrategyType,
-  comment: z.string().nullable().optional(),
+  comment: z.string().max(10000, "Comment too long").nullable().optional(),
   link: z
     .string()
+    .max(2000, "URL too long")
     .nullable()
     .optional()
     .refine(

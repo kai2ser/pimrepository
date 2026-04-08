@@ -9,6 +9,8 @@ export interface RecordFilters {
   country?: string;
   policyGuidanceTier?: number;
   strategyTier?: number;
+  limit?: number;
+  offset?: number;
 }
 
 // ── List all records (with optional filters) ──────────────────────────────
@@ -37,11 +39,14 @@ export async function listRecords(filters: RecordFilters = {}) {
     conditions.push(eq(policyRecords.strategyTier, filters.strategyTier));
   }
 
+  const maxLimit = filters.limit ?? 500;
   const rows = await db
     .select()
     .from(policyRecords)
     .where(conditions.length > 0 ? and(...conditions) : undefined)
-    .orderBy(asc(policyRecords.country), asc(policyRecords.nameEng));
+    .orderBy(asc(policyRecords.country), asc(policyRecords.nameEng))
+    .limit(maxLimit)
+    .offset(filters.offset ?? 0);
 
   return rows;
 }
@@ -140,6 +145,72 @@ export async function getRecordsWithDocsByCountry(iso3: string) {
   return records
     .map((r) => ({ record: r, docs: docMap.get(r.id) ?? [] }))
     .filter((r) => r.docs.length > 0);
+}
+
+// ── Full export: all records with documents (for RAG pipelines) ──────────
+export async function exportAllRecordsWithDocs() {
+  const [allRecords, allDocs] = await Promise.all([
+    db
+      .select({
+        id: policyRecords.id,
+        country: policyRecords.country,
+        countryName: sql<string>`COALESCE(${countries.name}, ${policyRecords.country})`,
+        nameEng: policyRecords.nameEng,
+        nameOrig: policyRecords.nameOrig,
+        year: policyRecords.year,
+        source: policyRecords.source,
+        yearRevised: policyRecords.yearRevised,
+        overview: policyRecords.overview,
+        policyGuidanceTier: policyRecords.policyGuidanceTier,
+        strategyTier: policyRecords.strategyTier,
+        link: policyRecords.link,
+        pages: policyRecords.pages,
+        tokens: policyRecords.tokens,
+        updatedAt: policyRecords.updatedAt,
+      })
+      .from(policyRecords)
+      .leftJoin(countries, eq(countries.iso3, policyRecords.country))
+      .orderBy(asc(policyRecords.country), asc(policyRecords.nameEng)),
+    db
+      .select({
+        id: documents.id,
+        recordId: documents.recordId,
+        langType: documents.langType,
+        langCode: documents.langCode,
+        langLabel: documents.langLabel,
+        blobUrl: documents.blobUrl,
+        fileName: documents.fileName,
+        fileSize: documents.fileSize,
+      })
+      .from(documents),
+  ]);
+
+  const docMap = new Map<string, (typeof allDocs)[number][]>();
+  for (const doc of allDocs) {
+    if (!docMap.has(doc.recordId)) docMap.set(doc.recordId, []);
+    docMap.get(doc.recordId)!.push(doc);
+  }
+
+  return allRecords.map((r) => ({
+    ...r,
+    documents: docMap.get(r.id) ?? [],
+  }));
+}
+
+// ── Document counts by language type, grouped by country ─────────────────
+export async function listDocCountsByCountry(): Promise<
+  { iso3: string; engDocs: number; oriDocs: number }[]
+> {
+  const rows = await db
+    .select({
+      iso3: policyRecords.country,
+      engDocs: sql<number>`COUNT(CASE WHEN ${documents.langType} = 'ENG' THEN 1 END)::int`,
+      oriDocs: sql<number>`COUNT(CASE WHEN ${documents.langType} = 'ORI' THEN 1 END)::int`,
+    })
+    .from(policyRecords)
+    .leftJoin(documents, eq(documents.recordId, policyRecords.id))
+    .groupBy(policyRecords.country);
+  return rows;
 }
 
 // ── Policy record counts grouped by country ISO3 ──────────────────────────

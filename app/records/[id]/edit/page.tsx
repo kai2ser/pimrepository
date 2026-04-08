@@ -4,7 +4,7 @@ import { getRecordWithDocs } from "@/modules/records/queries";
 import { RecordForm } from "@/components/records/RecordForm";
 import { ArrowLeft } from "lucide-react";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export default async function EditRecordPage({
   params,

@@ -197,15 +197,17 @@ export async function exportAllRecordsWithDocs() {
   }));
 }
 
-// ── Document counts by language type, grouped by country ─────────────────
+// ── Document counts by language, grouped by country ──────────────────────
+// Counts by actual language (lang_code) rather than slot type (langType),
+// because ORI slots may contain English documents (e.g. English-only countries).
 export async function listDocCountsByCountry(): Promise<
   { iso3: string; engDocs: number; oriDocs: number }[]
 > {
   const rows = await db
     .select({
       iso3: policyRecords.country,
-      engDocs: sql<number>`COUNT(CASE WHEN ${documents.langType} = 'ENG' THEN 1 END)::int`,
-      oriDocs: sql<number>`COUNT(CASE WHEN ${documents.langType} = 'ORI' THEN 1 END)::int`,
+      engDocs: sql<number>`COUNT(CASE WHEN ${documents.langCode} = 'en' OR (${documents.langCode} IS NULL AND ${documents.langType} = 'ENG') THEN 1 END)::int`,
+      oriDocs: sql<number>`COUNT(CASE WHEN ${documents.langCode} IS NOT NULL AND ${documents.langCode} != 'en' THEN 1 END)::int`,
     })
     .from(policyRecords)
     .leftJoin(documents, eq(documents.recordId, policyRecords.id))

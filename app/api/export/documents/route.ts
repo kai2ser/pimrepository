@@ -52,6 +52,7 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = req.nextUrl;
     const since = searchParams.get("since");
+    const lang = searchParams.get("lang")?.toUpperCase(); // ENG or ORI
 
     let data = await exportAllRecordsWithDocs();
 
@@ -64,10 +65,24 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    // Optional: filter documents to a specific language slot.
+    //   ?lang=ENG  → only English documents (for English RAG)
+    //   ?lang=ORI  → only original-language documents (for native RAG)
+    // Records with no matching documents are excluded from the response.
+    if (lang === "ENG" || lang === "ORI") {
+      data = data
+        .map((r) => ({
+          ...r,
+          documents: r.documents.filter((d) => d.langType === lang),
+        }))
+        .filter((r) => r.documents.length > 0);
+    }
+
     return NextResponse.json(
       {
         count: data.length,
         exportedAt: new Date().toISOString(),
+        lang: lang ?? "ALL",
         records: data,
       },
       {

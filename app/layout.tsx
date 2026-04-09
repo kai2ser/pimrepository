@@ -5,8 +5,6 @@ import { Toaster } from "@/components/ui/sonner";
 import Link from "next/link";
 import Image from "next/image";
 import { BookOpen, ScrollText, Info, Globe, Download } from "lucide-react";
-import { SessionProvider } from "@/components/providers/SessionProvider";
-import { UserMenu } from "@/components/auth/UserMenu";
 import { Separator } from "@/components/ui/separator";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -37,7 +35,6 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.className} antialiased min-h-screen bg-background`}>
-        <SessionProvider>
         {/* Top navigation */}
         <header className="sticky top-0 z-50 border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -90,7 +87,6 @@ export default function RootLayout({
                   Repository
                 </Link>
                 <Separator orientation="vertical" className="h-5 mx-1" />
-                <UserMenu />
               </nav>
             </div>
           </div>
@@ -105,7 +101,6 @@ export default function RootLayout({
         </footer>
 
         <Toaster richColors position="top-right" />
-        </SessionProvider>
       </body>
     </html>
   );

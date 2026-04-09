@@ -54,6 +54,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
 
   callbacks: {
+    authorized() {
+      // Open access — all pages and API routes are public
+      return true;
+    },
     jwt({ token, user }) {
       if (user?.id) token.id = user.id;
       return token;

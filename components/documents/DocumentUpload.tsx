@@ -257,7 +257,9 @@ function DocSlot({
       toast.success(`${label} uploaded successfully`);
       onUpdate();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Upload failed");
+      const msg = err instanceof Error ? err.message : "Upload failed";
+      console.error("[DocumentUpload]", err);
+      toast.error(msg);
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";

@@ -19,12 +19,23 @@ export async function POST(request: NextRequest) {
   const authResult = await requireAuth();
   if (!authResult.authorized) return authResult.response;
 
+  // Verify blob token is available
+  const token = process.env.BLOB_READ_WRITE_TOKEN;
+  if (!token) {
+    console.error("[POST /api/documents/upload] BLOB_READ_WRITE_TOKEN is not set");
+    return NextResponse.json(
+      { error: "Server misconfiguration: blob storage token not available" },
+      { status: 500 }
+    );
+  }
+
   const body = (await request.json()) as HandleUploadBody;
 
   try {
     const jsonResponse = await handleUpload({
       body,
       request,
+      token,
       onBeforeGenerateToken: async (pathname, clientPayload) => {
         // Validate metadata sent from the client
         let payload: Record<string, unknown> = {};
@@ -56,7 +67,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(jsonResponse);
   } catch (err) {
-    console.error("[POST /api/documents/upload]", err);
-    return NextResponse.json({ error: String(err) }, { status: 400 });
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[POST /api/documents/upload]", message, err);
+    // Return 200 with error details so the blob client can surface the actual message
+    // (the client throws a generic "Failed to retrieve token" on any non-200)
+    return NextResponse.json({ error: message }, { status: 400 });
   }
 }

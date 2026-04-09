@@ -4,17 +4,12 @@ import { db } from "@/lib/db";
 import { documents } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
 import { deleteDocument } from "@/modules/documents/queries";
-import { requireAuth } from "@/lib/auth";
-import { audit } from "@/lib/audit";
 
-// DELETE /api/documents/:id (auth required)
+// DELETE /api/documents/:id
 export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const authResult = await requireAuth();
-  if (!authResult.authorized) return authResult.response;
-
   try {
     const { id } = await params;
 
@@ -38,13 +33,6 @@ export async function DELETE(
 
     await deleteDocument(id);
 
-    audit({
-      session: authResult.session,
-      action: "delete",
-      entity: "document",
-      entityId: id,
-      detail: `Deleted document: ${doc.fileName ?? id}`,
-    });
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("[DELETE /api/documents/:id]", err);

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
-import { requireAuth } from "@/lib/auth";
 
 // Accepted MIME types for document attachments
 const ACCEPTED_TYPES = [
@@ -16,9 +15,6 @@ const ACCEPTED_TYPES = [
 //   2. { type: "blob.upload-completed" }        → fires after the file lands in Blob storage
 //      (we do NOT save to DB here; the client calls /api/documents/save instead)
 export async function POST(request: NextRequest) {
-  const authResult = await requireAuth();
-  if (!authResult.authorized) return authResult.response;
-
   // Verify blob token is available
   const token = process.env.BLOB_READ_WRITE_TOKEN;
   if (!token) {
@@ -69,8 +65,6 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[POST /api/documents/upload]", message, err);
-    // Return 200 with error details so the blob client can surface the actual message
-    // (the client throws a generic "Failed to retrieve token" on any non-200)
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }

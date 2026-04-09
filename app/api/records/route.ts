@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { listRecords, createRecord } from "@/modules/records/queries";
 import { policyRecordSchema } from "@/modules/records/schema";
-import { requireAuth } from "@/lib/auth";
-import { audit } from "@/lib/audit";
 
 // GET /api/records?search=&country=&policyGuidanceTier=&strategyTier=
 export async function GET(req: NextRequest) {
@@ -40,11 +38,8 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST /api/records (auth required)
+// POST /api/records
 export async function POST(req: NextRequest) {
-  const authResult = await requireAuth();
-  if (!authResult.authorized) return authResult.response;
-
   try {
     const body = await req.json();
     const parsed = policyRecordSchema.safeParse(body);
@@ -57,13 +52,6 @@ export async function POST(req: NextRequest) {
     }
 
     const record = await createRecord(parsed.data);
-    audit({
-      session: authResult.session,
-      action: "create",
-      entity: "record",
-      entityId: record.id,
-      detail: `Created: ${parsed.data.nameEng}`,
-    });
     return NextResponse.json(record, { status: 201 });
   } catch (err) {
     console.error("[POST /api/records]", err);

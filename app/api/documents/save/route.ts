@@ -1,15 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { upsertDocument } from "@/modules/documents/queries";
-import { requireAuth } from "@/lib/auth";
-import { audit } from "@/lib/audit";
 
 // POST /api/documents/save
 // Called by the client immediately after @vercel/blob/client upload() resolves.
 // Body: { blobUrl, recordId, langType, langCode?, langLabel?, fileName, fileSize }
 export async function POST(req: NextRequest) {
-  const authResult = await requireAuth();
-  if (!authResult.authorized) return authResult.response;
-
   try {
     const body = await req.json();
     const { blobUrl, recordId, langType, langCode, langLabel, fileName, fileSize } = body;
@@ -69,13 +64,6 @@ export async function POST(req: NextRequest) {
       fileSize: fileSize ?? undefined,
     });
 
-    audit({
-      session: authResult.session,
-      action: "create",
-      entity: "document",
-      entityId: doc.id,
-      detail: `Uploaded ${langType} document: ${fileName ?? "unnamed"}`,
-    });
     return NextResponse.json(doc, { status: 201 });
   } catch (err) {
     console.error("[POST /api/documents/save]", err);
